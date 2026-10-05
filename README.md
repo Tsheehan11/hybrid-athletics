@@ -7,8 +7,10 @@ A phone-first tracker for a bodyweight calisthenics routine built around climbin
 - **Today**: pick Home, Gym, Climb or Rest, tick off a run, and work through the daily checklist.
 - **Suggestions**: each day suggests which home workout to do next, whether it's a good day to climb or run, and when to back off.
 - **Workout rotation**: the suggested workout depends on what you did the last two days, so muscle groups get rest and every workout comes around.
+- **Workout timer**: starts on your first logged set (or tap Start). Finish stops it and confirms the session is saved.
 - **Last-time numbers**: each set box shows what you did last time, so progressive overload is built in.
-- **Substitutes**: swap any exercise for an easier or harder version from a dropdown.
+- **Easier and harder versions**: every exercise has a ladder of versions. Pick one from the dropdown.
+- **Rep feedback**: as you log sets, it tells you when you're above the range (move to the next harder version) or below it (drop to the next easier one).
 - **Daily checklist**: every-day essentials (wrists, scapular push-ups, hollow hold, side plank, deep squat) plus that workout's stretches.
 - **Calendar**: activity per day, checklist streak, training days and runs this week.
 - **Progress**: trend line per exercise and a "ready to level up" list.

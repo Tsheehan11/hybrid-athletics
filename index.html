@@ -13,7 +13,7 @@
   --bg:#EDF0F2; --surface:#FFFFFF; --sunk:#F4F6F8; --ink:#14202A; --muted:#5A6A75; --line:#D3DADF;
   --accent:#2753D8; --accent-ink:#FFFFFF; --accent-soft:#E3E9FB;
   --home:#2753D8; --gym:#B97A0C; --climb:#178A5C; --rest:#7D8C96; --run:#B42D7E;
-  --good:#178A5C; --good-soft:#DDF1E8; --caution:#B97A0C; --warn:#B3261E;
+  --good:#178A5C; --good-soft:#DDF1E8; --caution:#9A6508; --caution-soft:#F7ECD6; --warn:#B3261E;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
@@ -21,12 +21,12 @@
   --bg:#0E1418; --surface:#162027; --sunk:#111A20; --ink:#E5ECEF; --muted:#93A3AD; --line:#26343D;
   --accent:#7A9BFF; --accent-ink:#0E1418; --accent-soft:#1C2A4A;
   --home:#7A9BFF; --gym:#E2A83C; --climb:#3EC48D; --rest:#6F808B; --run:#E260AE;
-  --good:#3EC48D; --good-soft:#163428; --caution:#E2A83C; --warn:#FF8A80; color-scheme:dark;}}
+  --good:#3EC48D; --good-soft:#163428; --caution:#E2A83C; --caution-soft:#3A2C12; --warn:#FF8A80; color-scheme:dark;}}
 :root[data-theme="dark"]{
   --bg:#0E1418; --surface:#162027; --sunk:#111A20; --ink:#E5ECEF; --muted:#93A3AD; --line:#26343D;
   --accent:#7A9BFF; --accent-ink:#0E1418; --accent-soft:#1C2A4A;
   --home:#7A9BFF; --gym:#E2A83C; --climb:#3EC48D; --rest:#6F808B; --run:#E260AE;
-  --good:#3EC48D; --good-soft:#163428; --caution:#E2A83C; --warn:#FF8A80; color-scheme:dark;}
+  --good:#3EC48D; --good-soft:#163428; --caution:#E2A83C; --caution-soft:#3A2C12; --warn:#FF8A80; color-scheme:dark;}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
 .wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:14px 104px;display:flex;flex-direction:column;gap:14px}
@@ -173,6 +173,23 @@ textarea.inp{resize:vertical;min-height:64px}
 .prow .pl{font-size:12px;color:var(--muted);grid-column:1}
 .prow svg{grid-row:1 / span 2;grid-column:2}
 
+/* timer + feedback */
+.sess-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sess-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.clock{font-family:var(--display);font-weight:700;font-size:38px;line-height:1;font-variant-numeric:tabular-nums}
+.sess.live{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.sess.done{border-color:var(--good);box-shadow:inset 3px 0 0 var(--good)}
+.sess-save{font-size:13px;font-weight:600;color:var(--good);display:inline-flex;align-items:center;gap:6px}
+.sess-save::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.sess-save[data-k="busy"]{color:var(--caution)}
+.sess-save[data-k="err"]{color:var(--warn)}
+.primary.wide{width:100%;padding:13px 14px;font-size:15px}
+.fb{font-size:13px;line-height:1.4;border-radius:9px;padding:7px 10px;background:var(--sunk);color:var(--ink)}
+.fb.up{background:var(--accent-soft);color:var(--accent)}
+.fb.down{background:var(--caution-soft);color:var(--caution)}
+.fb.ok{background:var(--good-soft);color:var(--good)}
+.chip.low{background:var(--caution-soft);color:var(--caution)}
+
 /* program editor */
 .tplchips{display:flex;flex-wrap:wrap;gap:6px}
 .tplchips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-weight:600;font-size:13px}
@@ -213,64 +230,75 @@ textarea.inp{resize:vertical;min-height:64px}
 /* ---------- default program (bodyweight, home) ----------
    Workouts are templates. Each has a "load" on muscle groups, which the
    suggestion logic uses to keep a sensible rotation. */
-function X(id,name,sets,min,max,unit,side,subs){return {id:id,name:name,sets:sets,min:min,max:max,unit:unit,side:!!side,subs:subs||[]};}
+function X(id,name,sets,min,max,unit,side,easier,harder,other){return {id:id,name:name,sets:sets,min:min,max:max,unit:unit,side:!!side,easier:easier||[],harder:harder||[],other:other||[]};}
 function T(name,amt){return {name:name,amt:amt};}
-function defaultProgram(){
+/* easier: closest version first. harder: next step first. other: sideways swaps. */
+var HS_EASY=["Partial wall walk","Elevated pike hold (feet on chair)"],HS_HARD=["Chest-to-wall handstand","Freestanding handstand attempts"];
+var HOLLOW_E=["Tuck hollow hold"],HOLLOW_H=["Hollow hold, arms overhead"],HOLLOW_O=["Hollow rocks"];
+var SP_E=["Knee side plank"],SP_H=["Elevated side plank (feet on chair)","Elevated side plank, top leg raised"];
+var PU_E=["Incline push-ups"],PU_H=["Diamond push-ups","Archer push-ups","Pseudo-planche push-ups"];
+var PIKE_E=["Pike push-ups, partial range"],PIKE_H=["Elevated pike push-ups (feet on chair)","Wall handstand push-up negatives"];
+var ROW_E=["Towel door rows"],ROW_H=["Feet-elevated table rows","Single-arm table rows"],ROW_O=["Backpack rows"];
+var BSS_E=["Split squat"],BSS_H=["Backpack Bulgarian split squat"];
+var LSIT_E=["Foot-supported L-sit"],LSIT_H=["One-leg L-sit","L-sit"];
+var FROG_E=["Frog stand, toes on floor"],FROG_H=["Crow pose"];
+function rawProgram(){
   return {v:2, unit:"lb",
   daily:[T("Wrist circles","30s"),T("Scapular push-ups","×10"),T("Hollow hold","30s"),T("Side plank","20s/side"),T("Deep squat","60s")],
   week:{"1":"push","2":"legs","3":"mob","4":"core","5":"full","6":"skills","0":"fun"},
   tpl:[
     {id:"push",title:"Push + Flag",kind:"strength",load:{push:2,core:1,wrists:1},warm:"Wrist circles 30s · Scapular push-ups ×10 · Arm circles ×20",note:"Handstand first while you're fresh.",ex:[
-      X("d1a","Wall handstand hold",3,20,40,"sec",0,["Elevated pike hold (feet on chair)","Partial wall walk"]),
-      X("d1b","Push-ups",3,8,15,"reps",0,["Incline push-ups","Pseudo-planche push-ups","Archer push-ups"]),
-      X("d1c","Pike push-ups",3,6,12,"reps",0,["Elevated pike push-ups (feet on chair)"]),
-      X("d1d","Diamond push-ups",2,6,12,"reps",0,["Close-grip incline push-ups"]),
-      X("d1e","Table rows",3,8,12,"reps",0,["Towel door rows","Backpack rows"]),
-      X("d1f","Side plank",3,20,40,"sec",1,["Elevated side plank (feet on chair)"]),
-      X("d1g","Side plank leg raises",2,6,10,"reps",1,[])
+      X("d1a","Wall handstand hold",3,20,40,"sec",0,HS_EASY,HS_HARD),
+      X("d1b","Push-ups",3,8,15,"reps",0,PU_E,["Archer push-ups","Pseudo-planche push-ups"]),
+      X("d1c","Pike push-ups",3,6,12,"reps",0,PIKE_E,PIKE_H),
+      X("d1d","Diamond push-ups",2,6,12,"reps",0,["Close-grip incline push-ups"],["Close-grip pseudo-planche push-ups"]),
+      X("d1e","Table rows",3,8,12,"reps",0,ROW_E,ROW_H,ROW_O),
+      X("d1f","Side plank",3,20,40,"sec",1,SP_E,SP_H),
+      X("d1g","Side plank leg raises",2,6,10,"reps",1,["Knee side plank leg raises"],["Elevated side plank leg raises"])
     ],st:[T("Chest/shoulder stretch","30s"),T("Pancake","45s"),T("Hip flexor","45s/side")]},
-    {id:"legs",title:"Legs + Mobility",kind:"strength",load:{legs:2,core:1},warm:"Leg swings ×10/side · Bodyweight squats ×10",note:"Single-leg work first while fresh. Hold a loaded backpack once the top of the range gets easy.",ex:[
-      X("d2a","Box pistol to chair",2,5,8,"reps",1,["Assisted pistol squat","Pistol squat","Shrimp squat"]),
-      X("d2b","Bulgarian split squat",3,8,15,"reps",1,["Split squat","Backpack Bulgarian split squat"]),
-      X("d2c","Single-leg calf raises",3,15,25,"reps",1,[]),
-      X("d2d","Glute bridge",3,15,20,"reps",0,["Single-leg glute bridge","Hip thrust (shoulders on couch)"]),
-      X("d2e","Hollow hold",3,20,40,"sec",0,["Tuck hollow hold","Hollow rocks"])
+    {id:"legs",title:"Legs + Mobility",kind:"strength",load:{legs:2,core:1},warm:"Leg swings ×10/side · Bodyweight squats ×10",note:"Single-leg work first while fresh.",ex:[
+      X("d2a","Box pistol to chair",2,5,8,"reps",1,["Assisted pistol squat"],["Box pistol to low step","Pistol squat"],["Shrimp squat"]),
+      X("d2b","Bulgarian split squat",3,8,15,"reps",1,BSS_E,BSS_H),
+      X("d2c","Single-leg calf raises",3,15,25,"reps",1,["Double-leg calf raises"],["Backpack single-leg calf raises"]),
+      X("d2d","Glute bridge",3,15,20,"reps",0,[],["Single-leg glute bridge"],["Hip thrust (shoulders on couch)"]),
+      X("d2e","Hollow hold",3,20,40,"sec",0,HOLLOW_E,HOLLOW_H,HOLLOW_O)
     ],st:[T("Couch/quad stretch","45s/side"),T("Hamstring stretch","45s/side"),T("Pancake","60s"),T("Cossack squat","2×5/side")]},
     {id:"core",title:"Core + Flag Skills",kind:"strength",load:{core:2,wrists:1},warm:"Wrist circles 30s",note:"For flag work, keep your body dead straight rather than chasing time.",ex:[
-      X("d4a","Tuck L-sit",4,10,20,"sec",0,["Foot-supported L-sit","One-leg L-sit","L-sit"]),
-      X("d4b","Side plank leg raises",3,6,10,"reps",1,[]),
-      X("d4c","Hollow hold",3,20,40,"sec",0,["Tuck hollow hold","Hollow rocks"]),
-      X("d4d","Reverse plank",3,20,40,"sec",0,[]),
-      X("d4e","Elevated side plank (feet on chair)",3,20,40,"sec",1,["Side plank","Side plank, top leg raised"])
+      X("d4a","Tuck L-sit",4,10,20,"sec",0,LSIT_E,LSIT_H),
+      X("d4b","Side plank leg raises",3,6,10,"reps",1,["Knee side plank leg raises"],["Elevated side plank leg raises"]),
+      X("d4c","Hollow hold",3,20,40,"sec",0,HOLLOW_E,HOLLOW_H,HOLLOW_O),
+      X("d4d","Reverse plank",3,20,40,"sec",0,["Reverse tabletop"],["Reverse plank, one leg raised"]),
+      X("d4e","Elevated side plank (feet on chair)",3,20,40,"sec",1,["Side plank"],["Elevated side plank, top leg raised"])
     ],st:[T("Pancake","60s"),T("Straddle","45s"),T("Pike","45s"),T("Shoulder flexion","45s")]},
     {id:"full",title:"Full Body Strength",kind:"strength",load:{push:1,legs:1,pull:1,core:1},warm:"Wrist circles 30s · Scapular push-ups ×10",note:"Run it as 3 rounds: one set of each exercise, then repeat.",ex:[
-      X("d5a","Push-ups",3,10,15,"reps",0,["Pseudo-planche push-ups","Archer push-ups","Diamond push-ups"]),
-      X("d5b","Bulgarian split squat",3,8,12,"reps",1,["Backpack Bulgarian split squat","Split squat"]),
-      X("d5c","Pike push-ups",3,8,12,"reps",0,["Elevated pike push-ups (feet on chair)"]),
-      X("d5d","Table rows",3,8,12,"reps",0,["Towel door rows","Backpack rows"]),
-      X("d5e","Glute bridge",3,15,20,"reps",0,["Single-leg glute bridge"]),
-      X("d5f","Hollow hold",3,20,40,"sec",0,["Tuck hollow hold","Hollow rocks"]),
-      X("d5g","Side plank",3,20,40,"sec",1,["Elevated side plank (feet on chair)"])
+      X("d5a","Push-ups",3,10,15,"reps",0,PU_E,PU_H),
+      X("d5b","Bulgarian split squat",3,8,12,"reps",1,BSS_E,BSS_H),
+      X("d5c","Pike push-ups",3,8,12,"reps",0,PIKE_E,PIKE_H),
+      X("d5d","Table rows",3,8,12,"reps",0,ROW_E,ROW_H,ROW_O),
+      X("d5e","Glute bridge",3,15,20,"reps",0,[],["Single-leg glute bridge"]),
+      X("d5f","Hollow hold",3,20,40,"sec",0,HOLLOW_E,HOLLOW_H,HOLLOW_O),
+      X("d5g","Side plank",3,20,40,"sec",1,SP_E,SP_H)
     ],st:[T("Hip flexor","45s/side"),T("Hamstring stretch","45s/side"),T("Shoulder stretch","30s/side")]},
     {id:"skills",title:"Skills",kind:"skill",load:{push:1,core:1,wrists:2},warm:"Wrist circles 30s · Scapular push-ups ×10",note:"Falling out of frog stands is fine. Count total time across attempts.",ex:[
-      X("d6a","Frog stand",4,10,30,"sec",0,["Crow pose"]),
-      X("d6b","Wall handstand hold",3,20,40,"sec",0,["Elevated pike hold (feet on chair)","Partial wall walk"]),
-      X("d6c","Tuck L-sit",3,10,20,"sec",0,["Foot-supported L-sit","One-leg L-sit"]),
-      X("d6d","Side plank",3,30,45,"sec",1,["Elevated side plank (feet on chair)"])
+      X("d6a","Frog stand",4,10,30,"sec",0,FROG_E,FROG_H),
+      X("d6b","Wall handstand hold",3,20,40,"sec",0,HS_EASY,HS_HARD),
+      X("d6c","Tuck L-sit",3,10,20,"sec",0,LSIT_E,LSIT_H),
+      X("d6d","Side plank",3,30,45,"sec",1,SP_E,SP_H)
     ],st:[T("Pancake","60s"),T("Pike","60s"),T("Couch stretch","45s/side"),T("Shoulder stretch","45s/side"),T("Wrist/forearm","1 min")]},
     {id:"fun",title:"Mobility + Fun Skills",kind:"light",load:{wrists:1},pick:true,warm:"Wrist circles 30s",note:"Pick 2–3 skills and log only those. Stop well short of failure.",ex:[
-      X("d0a","Frog stand",3,10,30,"sec",0,["Crow pose"]),
-      X("d0b","Wall handstand hold",3,20,40,"sec",0,["Elevated pike hold (feet on chair)","Partial wall walk"]),
-      X("d0c","Tuck L-sit",3,10,20,"sec",0,["Foot-supported L-sit","One-leg L-sit"]),
-      X("d0d","Crow pose",3,5,20,"sec",0,[]),
-      X("d0e","Hollow hold",3,20,40,"sec",0,["Tuck hollow hold"]),
-      X("d0f","Side plank",3,20,40,"sec",1,["Elevated side plank (feet on chair)","Side plank, top leg raised"])
+      X("d0a","Frog stand",3,10,30,"sec",0,FROG_E,FROG_H),
+      X("d0b","Wall handstand hold",3,20,40,"sec",0,HS_EASY,HS_HARD),
+      X("d0c","Tuck L-sit",3,10,20,"sec",0,LSIT_E,LSIT_H),
+      X("d0d","Crow pose",3,5,20,"sec",0,["Frog stand"],["Crow pose, straighter arms"]),
+      X("d0e","Hollow hold",3,20,40,"sec",0,HOLLOW_E,HOLLOW_H,HOLLOW_O),
+      X("d0f","Side plank",3,20,40,"sec",1,SP_E,SP_H)
     ],st:[T("Cossack squat","5/side"),T("Pancake","60s"),T("Pike","60s"),T("Hip flexor","60s/side"),T("Couch stretch","45s/side"),T("Shoulder stretch","45s/side")]},
     {id:"mob",title:"Mobility + Recovery",kind:"recovery",load:{},warm:"",note:"No strength work today. About 10 minutes of stretching.",ex:[],st:[
       T("Cat-cow","×10"),T("World's greatest stretch","5/side"),T("Pancake","60s"),T("Hip flexor","45s/side"),T("Shoulder stretch","45s/side"),T("Wrist/forearm","1–2 min")]}
   ]};
 }
-var MIN_EX=[X("m1","Push-ups",1,10,10,"reps",0,[]),X("m2","Squats",1,15,15,"reps",0,[]),X("m3","Hollow hold",1,20,20,"sec",0,[]),X("m4","Side plank",1,20,20,"sec",1,[])];
+var MIN_EX=[X("m1","Push-ups",1,10,10,"reps",0),X("m2","Squats",1,15,15,"reps",0),X("m3","Hollow hold",1,20,20,"sec",0),X("m4","Side plank",1,20,20,"sec",1)];
+function defaultProgram(){return JSON.parse(JSON.stringify(rawProgram()));}
 var CLIMB_EXTRA=[T("Wrist/forearm","1–2 min"),T("Shoulder stretch","45s/side")];
 var GYM_SUGGEST=["Bench press","Back squat","Deadlift","Romanian deadlift","Overhead press","Pull-up","Weighted pull-up","Lat pulldown","Seated cable row","Dumbbell row","Dumbbell bench press","Cable face pull","Leg press","Hangboard hang"];
 var LOAD={climb:{pull:2,grip:2,core:1,wrists:1},run:{legs:1},gym:{push:1,pull:1,legs:1}};
@@ -305,9 +333,34 @@ function normalizeProgram(p){
   var def=defaultProgram();
   if(!p||p.v!==2||!Array.isArray(p.tpl)){var u=p&&p.unit;if(u)def.unit=u;return def;}
   p.daily=p.daily||[];p.week=p.week||def.week;p.unit=p.unit||"lb";
-  p.tpl.forEach(function(t){t.ex=t.ex||[];t.st=t.st||[];t.load=t.load||{};});
+  var defEx={};def.tpl.forEach(function(t){t.ex.forEach(function(x){defEx[x.id]=x;});});
+  p.tpl.forEach(function(t){t.ex=t.ex||[];t.st=t.st||[];t.load=t.load||{};
+    t.ex.forEach(function(x){
+      if(!x.easier&&!x.harder){var dx=defEx[x.id];x.easier=dx?dx.easier.slice():[];x.harder=dx?dx.harder.slice():[];
+        x.other=(x.subs||[]).filter(function(n){return x.easier.indexOf(n)<0&&x.harder.indexOf(n)<0;});}
+      x.easier=x.easier||[];x.harder=x.harder||[];x.other=x.other||[];delete x.subs;
+    });});
   return p;
 }
+/* versions of an exercise, easiest to hardest, with the main one in the middle */
+function ladder(x){return (x.easier||[]).slice().reverse().concat([x.name],x.harder||[]);}
+function allNames(x){var out=[];ladder(x).concat(x.other||[]).forEach(function(n){if(n&&out.indexOf(n)<0)out.push(n);});return out;}
+function steps(x,cur){var L=ladder(x),i=L.indexOf(cur);if(i<0)return {up:null,down:null};return {up:L[i+1]||null,down:L[i-1]||null};}
+function stepsByName(name){var ts=S.program.tpl;for(var i=0;i<ts.length;i++)for(var j=0;j<ts[i].ex.length;j++){var x=ts[i].ex[j];if(ladder(x).indexOf(name)>=0)return steps(x,name);}return {up:null,down:null};}
+/* live advice from the numbers entered for one exercise */
+function feedback(x,rec){
+  var cur=(rec&&rec.name)||x.name,st=steps(x,cur),sec=x.unit==="sec",u=sec?" s":"";
+  var v=((rec&&rec.sets)||[]).slice(0,x.sets).filter(filled).map(Number);if(!v.length||x.min===x.max&&x.sets===1)return null;
+  var done=v.length>=x.sets,genUp=sec?"Hold past the range, or add a harder version under Program.":"Slow the lowering to 3 seconds, or add a harder version under Program.";
+  var avg=v.reduce(function(a,b){return a+b;},0)/v.length;
+  if(done&&v.every(function(a){return a>=x.max;}))return {k:"up",t:"Every set hit the top of the range. "+(st.up?"Move to "+st.up+" next time.":genUp)};
+  if(!done&&v[0]>=Math.ceil(x.max*1.3))return {k:"up",t:"First set was well above the range ("+v[0]+u+"). "+(st.up?"Switch to "+st.up+" for the rest.":genUp)};
+  if(done&&avg<x.min)return {k:"down",t:"Below the range today. "+(st.down?"Try "+st.down+" next time and build back up.":"Stick with it and aim for "+(sec?"a few more seconds":"one more rep")+" next time.")};
+  if(!done&&v[0]<Math.max(1,Math.floor(x.min*.6)))return {k:"down",t:"Well under the range. "+(st.down?"Switch to "+st.down+" for the rest.":"Shorter sets with clean form are fine. You'll build up.")};
+  if(done)return {k:"ok",t:"In range. Beat one number next time."};
+  return null;
+}
+function fbHtml(id,f){return '<div class="fb'+(f?" "+f.k:"")+'" id="fb-'+id+'"'+(f?"":" hidden")+'>'+(f?esc(f.t):"")+'</div>';}
 function tplById(id){var a=S.program.tpl;for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i];return null;}
 function tplOfEntry(e){
   if(!e)return null;var t=tplById(e.tpl);if(t)return t;
@@ -453,7 +506,8 @@ function flushAll(){for(var k in timers){if(timers[k]){clearTimeout(timers[k]);t
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")flushAll();});
 
 var statusState={k:"busy",t:"Loading…"};
-function setStatus(k,t){statusState={k:k,t:t};var el=document.getElementById("status");if(el){el.dataset.k=k;el.textContent=t;}}
+function setStatus(k,t){statusState={k:k,t:t};var el=document.getElementById("status");if(el){el.dataset.k=k;el.textContent=t;}
+  var sv=document.getElementById("sess-save");if(sv){var x=saveText();sv.dataset.k=x.k;sv.textContent=x.t;}}
 
 var pendingRender=false;
 function editing(){var a=document.activeElement;return a&&root.contains(a)&&/^(INPUT|TEXTAREA)$/.test(a.tagName)&&a.type!=="checkbox";}
@@ -509,14 +563,17 @@ function suggCard(d,e){
 }
 function tgtText(x){var r=x.min===x.max?String(x.max):x.min+"–"+x.max;return x.sets+" × "+r+(x.unit==="sec"?" s":"")+(x.side?" /side":"");}
 function exBlock(x,rec,mode,d){
-  var names=[x.name].concat(x.subs||[]);var cur=(rec&&rec.name)||x.name;if(names.indexOf(cur)<0)names.push(cur);
-  var last=lastHome(cur,d);
-  var nameHtml=names.length>1?'<select data-ch="sub" data-ex="'+esc(x.id)+'" data-mode="'+mode+'" aria-label="Exercise or substitute">'+names.map(function(n,i){return '<option value="'+esc(n)+'"'+(n===cur?" selected":"")+'>'+esc(n)+(i===0?"":" (sub)")+'</option>';}).join("")+'</select>':esc(cur);
+  var names=allNames(x);var cur=(rec&&rec.name)||x.name;if(names.indexOf(cur)<0)names.push(cur);
+  var last=lastHome(cur,d),st=steps(x,cur);
+  function tag(n){return n===x.name?"":(x.easier||[]).indexOf(n)>=0?" (easier)":(x.harder||[]).indexOf(n)>=0?" (harder)":" (swap)";}
+  var nameHtml=names.length>1?'<select data-ch="sub" data-ex="'+esc(x.id)+'" data-mode="'+mode+'" aria-label="Exercise version">'+names.map(function(n){return '<option value="'+esc(n)+'"'+(n===cur?" selected":"")+'>'+esc(n)+tag(n)+'</option>';}).join("")+'</select>':esc(cur);
   var sets="";for(var i=0;i<x.sets;i++){var v=rec&&rec.sets?rec.sets[i]:"";var ph=last&&last.sets&&filled(last.sets[i])?last.sets[i]:"";
     sets+='<label class="set"><span>SET '+(i+1)+'</span><input type="number" inputmode="numeric" min="0" step="1" data-in="set" data-ex="'+esc(x.id)+'" data-mode="'+mode+'" data-i="'+i+'" value="'+(filled(v)?esc(v):"")+'" placeholder="'+esc(ph)+'" aria-label="'+esc(cur)+' set '+(i+1)+(x.unit==="sec"?" seconds":" reps")+'"></label>';}
   var lastLine=last?'Last time ('+fmtShort(last.d)+'): '+esc(setsText(last.sets))+(x.unit==="sec"?" s":""):"First time logging this. Your numbers will show here next time.";
-  var ready=last&&meetsTop(last)&&(!last.tgt||last.tgt.max<=x.max)?'<span class="chip">Hit the top of the range last time. Try a harder version.</span>':"";
-  return '<div class="ex"><div class="ex-head"><div class="ex-name">'+nameHtml+'</div><div class="tgt num">'+tgtText(x)+'</div></div>'+ready+'<div class="sets">'+sets+'</div><div class="last">'+lastLine+'</div></div>';
+  var ready="";
+  if(last&&meetsTop(last)&&(!last.tgt||last.tgt.max<=x.max))ready='<span class="chip">Hit the top of the range last time. '+esc(st.up?"Try "+st.up+".":"Slow the tempo or hold longer.")+'</span>';
+  else if(last&&last.tgt&&x.sets>1){var lv=last.sets.filter(filled).map(Number);if(lv.length&&lv.reduce(function(a,b){return a+b;},0)/lv.length<last.tgt.min)ready='<span class="chip low">Below the range last time.'+(st.down?" "+esc(st.down)+" is an option.":"")+'</span>';}
+  return '<div class="ex"><div class="ex-head"><div class="ex-name">'+nameHtml+'</div><div class="tgt num">'+tgtText(x)+'</div></div>'+ready+'<div class="sets">'+sets+'</div>'+fbHtml(mode+x.id,feedback(x,rec))+'<div class="last">'+lastLine+'</div></div>';
 }
 function homeCard(d,e){
   var useMin=!!(e&&e.min),t=curTpl(d,e),sg=suggest(d);
@@ -569,6 +626,25 @@ function stretchCard(d,e){
   if(list.length&&n<list.length)h+='<button class="small-btn" data-act="st-all">Mark all done</button>';
   return h+'</section>';
 }
+/* ---------- workout timer ---------- */
+function clockText(ms){var s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60);s=s%60;return (h?h+":"+pad(m):m)+":"+pad(s);}
+function fmtDur(min){return min<60?min+" min":Math.floor(min/60)+"h "+pad(min%60)+"m";}
+function saveText(){var id=mkey(S.date);if(busy(id))return {k:"busy",t:"Saving…"};if(statusState.k==="err")return {k:"err",t:statusState.t};return {k:"ok",t:S.mode==="db"?"Saved to your account":"Saved on this device"};}
+function sessLabel(e){var t=(e&&e.type)||"home";return t==="gym"?"gym session":t==="climb"?"climbing session":"workout";}
+function sessInner(d,e){
+  var s=(e&&e.sess)||{},lbl=sessLabel(e);
+  if(s.end){var sv=saveText();
+    return '<div class="sess-row"><div class="sess-main"><span class="label">'+esc(lbl)+' finished</span><span class="clock">'+(s.min!=null?esc(fmtDur(s.min)):"Done")+'</span></div><span class="sess-save" id="sess-save" data-k="'+sv.k+'">'+esc(sv.t)+'</span></div><button class="small-btn" data-act="sess-reopen">Reopen to edit</button>';}
+  if(s.start)return '<div class="sess-row"><div class="sess-main"><span class="label">'+esc(lbl)+' in progress</span><span class="clock num" id="sess-clock" data-start="'+s.start+'">'+clockText(Date.now()-s.start)+'</span></div><button class="primary" data-act="sess-finish">Finish</button></div>';
+  return '<div class="sess-row"><div class="sess-main"><span class="label">Timer</span><span class="note">Starts on your first logged set, or tap Start.</span></div><button class="primary" data-act="sess-start">Start</button></div>';
+}
+function sessCard(d,e){var s=(e&&e.sess)||{};return '<section class="card sess'+(s.end?" done":s.start?" live":"")+'" id="sess">'+sessInner(d,e)+'</section>';}
+function finishBtn(e){var s=(e&&e.sess)||{};return s.end?"":'<button class="primary wide" data-act="sess-finish">Finish '+esc(sessLabel(e))+'</button>';}
+function refreshSess(){var el=document.getElementById("sess");if(el){var e=getEntry(S.date),s=(e&&e.sess)||{};el.className="card sess"+(s.end?" done":s.start?" live":"");el.innerHTML=sessInner(S.date,e);}}
+function autoStart(d,e){if(d!==todayKey())return;e.sess=e.sess||{};if(!e.sess.start&&!e.sess.end){e.sess.start=Date.now();refreshSess();}}
+function flushNow(id){if(timers[id]){clearTimeout(timers[id]);timers[id]=null;}flush(id);}
+setInterval(function(){var c=document.getElementById("sess-clock");if(c)c.textContent=clockText(Date.now()-Number(c.dataset.start));},1000);
+
 function viewToday(){
   var d=S.date,e=getEntry(d),type=(e&&e.type)||"home",t=todayKey();
   var rel=d===t?"Today":d===addDays(t,-1)?"Yesterday":d===addDays(t,1)?"Tomorrow":DN[dowOf(d)];
@@ -580,9 +656,11 @@ function viewToday(){
   h+='<div><div class="label" style="margin-bottom:6px">What are you doing?</div><div class="seg" role="group" aria-label="Day type">'+
     [["home","Home","calisthenics"],["gym","Gym","weights"],["climb","Climb","session"],["rest","Rest","checklist only"]].map(function(o){return '<button data-act="type" data-v="'+o[0]+'" aria-pressed="'+(type===o[0])+'">'+o[1]+'<small>'+o[2]+'</small></button>';}).join("")+'</div></div>';
   h+='<div class="toggles"><label class="pill run"><input type="checkbox" data-ch="run"'+(e&&e.run?" checked":"")+'> Went for a run <small>details on Garmin</small></label></div>';
+  if(type!=="rest")h+=sessCard(d,e);
   if(type==="home")h+=homeCard(d,e);
   if(type==="gym")h+=gymCard(d,e);
   if(type==="climb"){h+=climbCard(d,e);if(e&&e.alsoHome)h+=homeCard(d,e);}
+  if(type!=="rest")h+=finishBtn(e);
   if(type==="rest")h+='<section class="card"><h2>Rest day</h2><p class="note">No training today. The daily checklist still keeps your streak going.</p></section>';
   h+=stretchCard(d,e);
   return h+'</fieldset>';
@@ -616,7 +694,7 @@ function viewProgress(){
   var ready=home.filter(function(r){return meetsTop(r.last);});
   var h='<h1 style="font-size:30px">Progress</h1>';
   h+='<section class="card"><div class="card-head"><h2>Ready to level up</h2><span class="label num">'+ready.length+'</span></div>';
-  h+=ready.length?ready.map(function(r){return '<div class="prow"><div class="pn">'+esc(r.n)+'</div><div class="pl">Hit '+esc(setsText(r.last.sets))+(r.last.unit==="sec"?" s":"")+' on '+fmtShort(r.last.d)+'. Switch to a harder sub or add load.</div></div>';}).join(""):'<p class="empty">When you hit the top of the range on every set, the exercise shows up here.</p>';
+  h+=ready.length?ready.map(function(r){return '<div class="prow"><div class="pn">'+esc(r.n)+'</div><div class="pl">Hit '+esc(setsText(r.last.sets))+(r.last.unit==="sec"?" s":"")+' on '+fmtShort(r.last.d)+'. '+esc((function(u){return u?"Next: "+u+".":"Slow the tempo or add a harder version under Program.";})(stepsByName(r.n).up))+'</div></div>';}).join(""):'<p class="empty">When you hit the top of the range on every set, the exercise shows up here.</p>';
   h+='</section><section class="card"><div class="card-head"><h2>Calisthenics</h2><span class="label">Best set per session</span></div>';
   h+=home.length?home.map(function(r){var vals=r.a.slice(-12).map(function(s){return Math.max.apply(null,s.sets.filter(filled).map(Number));});
     return '<div class="prow"><div class="pn">'+esc(r.n)+'</div>'+spark(vals)+'<div class="pl num">'+fmtShort(r.last.d)+': '+esc(setsText(r.last.sets))+(r.last.unit==="sec"?" s":"")+' · '+r.a.length+' session'+(r.a.length===1?"":"s")+'</div></div>';}).join(""):'<p class="empty">Log your first home workout and each exercise will get a trend line here.</p>';
@@ -651,7 +729,9 @@ function viewProgram(){
       h+='<div class="field"><label for="pmin-'+id+'">Min</label><input id="pmin-'+id+'" class="inp num" type="number" min="0" data-in="pex" data-id="'+id+'" data-f="min" value="'+x.min+'"></div>';
       h+='<div class="field"><label for="pmax-'+id+'">Max</label><input id="pmax-'+id+'" class="inp num" type="number" min="0" data-in="pex" data-id="'+id+'" data-f="max" value="'+x.max+'"></div>';
       h+='<div class="field unit"><label for="pu-'+id+'">Measured in</label><select id="pu-'+id+'" class="inp" data-ch="pex-unit" data-id="'+id+'"><option value="reps"'+(x.unit==="reps"?" selected":"")+'>Reps</option><option value="sec"'+(x.unit==="sec"?" selected":"")+'>Seconds</option></select></div></div>';
-      h+='<div class="field"><label for="psub-'+id+'">Substitutes (comma separated)</label><input id="psub-'+id+'" class="inp" data-in="pex" data-id="'+id+'" data-f="subs" value="'+esc((x.subs||[]).join(", "))+'" placeholder="Easier or harder versions"></div>';
+      h+='<div class="field"><label for="pe-'+id+'">Easier versions, closest first (comma separated)</label><input id="pe-'+id+'" class="inp" data-in="pex" data-id="'+id+'" data-f="easier" value="'+esc((x.easier||[]).join(", "))+'" placeholder="e.g. Incline push-ups"></div>';
+      h+='<div class="field"><label for="ph-'+id+'">Harder versions, next step first</label><input id="ph-'+id+'" class="inp" data-in="pex" data-id="'+id+'" data-f="harder" value="'+esc((x.harder||[]).join(", "))+'" placeholder="e.g. Archer push-ups"></div>';
+      h+='<div class="field"><label for="po-'+id+'">Other swaps</label><input id="po-'+id+'" class="inp" data-in="pex" data-id="'+id+'" data-f="other" value="'+esc((x.other||[]).join(", "))+'" placeholder="Same difficulty, different movement"></div>';
       h+='<div class="pex-tools"><label class="pill"><input type="checkbox" data-ch="pex-side" data-id="'+id+'"'+(x.side?" checked":"")+'> Per side</label><span class="sp"></span><button class="icon-btn" data-act="pex-up" data-id="'+id+'" aria-label="Move up"'+(i===0?" disabled":"")+'>↑</button><button class="icon-btn" data-act="pex-down" data-id="'+id+'" aria-label="Move down"'+(i===p.ex.length-1?" disabled":"")+'>↓</button><button class="icon-btn" data-act="pex-del" data-id="'+id+'" aria-label="Remove exercise">×</button></div></div>';
     });
     h+='<button class="primary" data-act="pex-add">+ Add exercise</button></section>';
@@ -692,6 +772,12 @@ root.addEventListener("click",function(ev){
     case "today":S.date=todayKey();break;
     case "goto":S.date=b.dataset.d;if(S.tab!=="today"){S.tab="today";render();window.scrollTo(0,0);return;}break;
     case "type":e=ensureEntry(d);e.type=b.dataset.v;touch(d);break;
+    case "sess-start":e=ensureEntry(d);e.sess={start:Date.now()};touch(d);break;
+    case "sess-finish":e=ensureEntry(d);e.sess=e.sess||{};e.sess.end=Date.now();
+      e.sess.min=e.sess.start?Math.max(1,Math.round((e.sess.end-e.sess.start)/60000)):null;
+      if(e.type==="climb"&&e.sess.min&&!(e.climb&&filled(e.climb.min))){e.climb=e.climb||{};e.climb.min=e.sess.min;}
+      touch(d);flushNow(mkey(d));render();var sc=document.getElementById("sess");if(sc)sc.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});return;
+    case "sess-reopen":e=ensureEntry(d);if(e.sess){e.sess.end=null;e.sess.min=null;}touch(d);break;
     case "use-tpl":var sg=suggest(d);e=ensureEntry(d);e.type="home";e.tpl=sg.t.id;touch(d);break;
     case "st-all":e=ensureEntry(d);e.st=e.st||{};stretchList(d,e).forEach(function(s){e.st[s.name]=true;});touch(d);break;
     case "gadd":e=ensureEntry(d);e.gym=e.gym||[];e.gym.push({name:"",sets:[{w:"",r:""},{w:"",r:""},{w:"",r:""}]});touch(d);render();var ins=root.querySelectorAll('[data-in="gname"]');if(ins.length)ins[ins.length-1].focus();return;
@@ -700,7 +786,7 @@ root.addEventListener("click",function(ev){
     case "gdelset":e=ensureEntry(d);e.gym[+b.dataset.i].sets.splice(+b.dataset.j,1);touch(d);break;
     case "cal-prev":case "cal-next":var f=parse(S.calMonth+"-01");f.setMonth(f.getMonth()+(a==="cal-prev"?-1:1));S.calMonth=key(f).slice(0,7);break;
     case "ptpl":S.progTpl=b.dataset.v;S.confirmReset=false;break;
-    case "pex-add":tplById(S.progTpl).ex.push(X("x"+Date.now().toString(36),"New exercise",3,8,12,"reps",0,[]));persist("program");render();var ni=root.querySelectorAll('[data-in="pex"][data-f="name"]');if(ni.length){ni[ni.length-1].focus();ni[ni.length-1].select();}return;
+    case "pex-add":tplById(S.progTpl).ex.push(X("x"+Date.now().toString(36),"New exercise",3,8,12,"reps",0));persist("program");render();var ni=root.querySelectorAll('[data-in="pex"][data-f="name"]');if(ni.length){ni[ni.length-1].focus();ni[ni.length-1].select();}return;
     case "pex-del":case "pex-up":case "pex-down":var r=exById(b.dataset.id);if(!r)return;
       if(a==="pex-del")r.p.ex.splice(r.i,1);else{var j=r.i+(a==="pex-up"?-1:1);if(j<0||j>=r.p.ex.length)return;var tmp=r.p.ex[j];r.p.ex[j]=r.x;r.p.ex[r.i]=tmp;}
       persist("program");break;
@@ -734,14 +820,16 @@ root.addEventListener("change",function(ev){
 root.addEventListener("input",function(ev){
   var t=ev.target,k=t.dataset.in;if(!k)return;var d=S.date,e;
   switch(k){
-    case "set":e=ensureEntry(d);var x=planEx(d,t.dataset.ex,t.dataset.mode);if(!x)return;var r=recFor(d,e,x,t.dataset.mode);while(r.sets.length<x.sets)r.sets.push(null);r.sets[+t.dataset.i]=t.value===""?null:Number(t.value);touch(d);break;
+    case "set":e=ensureEntry(d);var x=planEx(d,t.dataset.ex,t.dataset.mode);if(!x)return;var r=recFor(d,e,x,t.dataset.mode);while(r.sets.length<x.sets)r.sets.push(null);r.sets[+t.dataset.i]=t.value===""?null:Number(t.value);autoStart(d,e);touch(d);
+      var fb=document.getElementById("fb-"+t.dataset.mode+x.id);if(fb){var f=feedback(x,r);fb.className="fb"+(f?" "+f.k:"");fb.textContent=f?f.t:"";fb.hidden=!f;}
+      break;
     case "climb":e=ensureEntry(d);e.climb=e.climb||{};var f=t.dataset.f;e.climb[f]=f==="min"?(t.value===""?null:Number(t.value)):t.value;touch(d);break;
     case "gname":e=ensureEntry(d);var gi=+t.dataset.i;e.gym[gi].name=t.value;touch(d);
       var hint=document.getElementById("gh-"+gi);if(hint){var l=lastGym(t.value,d);hint.textContent=l?"Last time ("+fmtShort(l.d)+"): "+gymText(l.sets):(t.value?"First time logging this.":"");}break;
-    case "gset":e=ensureEntry(d);var s=e.gym[+t.dataset.i].sets[+t.dataset.j];s[t.dataset.f]=t.value===""?"":Number(t.value);touch(d);break;
+    case "gset":e=ensureEntry(d);var s=e.gym[+t.dataset.i].sets[+t.dataset.j];s[t.dataset.f]=t.value===""?"":Number(t.value);autoStart(d,e);touch(d);break;
     case "ptpl":tplById(S.progTpl)[t.dataset.f]=t.value;persist("program");break;
     case "pex":var pr=exById(t.dataset.id);if(!pr)return;var pf=t.dataset.f;
-      if(pf==="subs")pr.x.subs=t.value.split(",").map(function(s){return s.trim();}).filter(Boolean);
+      if(pf==="easier"||pf==="harder"||pf==="other")pr.x[pf]=t.value.split(",").map(function(s){return s.trim();}).filter(Boolean);
       else if(pf==="name")pr.x.name=t.value;
       else{var n=parseInt(t.value,10);if(isNaN(n))return;if(pf==="sets")n=Math.max(1,Math.min(10,n));pr.x[pf]=Math.max(0,n);}
       persist("program");break;
@@ -750,7 +838,7 @@ root.addEventListener("input",function(ev){
 });
 
 /* test hook for offline checks; harmless in the page */
-window.__cali={S:S,render:render,suggest:function(d){SC={};HC=null;return suggest(d);}};
+window.__cali={S:S,render:render,feedback:function(x,r){return feedback(x,r);},suggest:function(d){SC={};HC=null;return suggest(d);}};
 
 render();
 initStore();
