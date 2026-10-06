@@ -8,6 +8,7 @@ A phone-first tracker for a bodyweight calisthenics routine built around climbin
 - **Suggestions**: each day suggests which home workout to do next, whether it's a good day to climb or run, and when to back off.
 - **Workout rotation**: the suggested workout depends on what you did the last two days, so muscle groups get rest and every workout comes around.
 - **Workout timer**: starts on your first logged set (or tap Start). Finish stops it and confirms the session is saved.
+- **Hold stopwatch**: timed exercises (handstands, planks, L-sits) have a Time set button: 3-second get-ready, beeps at the bottom and top of the range, and Stop saves the seconds into the next empty set.
 - **Last-time numbers**: each set box shows what you did last time, so progressive overload is built in.
 - **Easier and harder versions**: every exercise has a ladder of versions. Pick one from the dropdown.
 - **Rep feedback**: as you log sets, it tells you when you're above the range (move to the next harder version) or below it (drop to the next easier one).
@@ -15,7 +16,7 @@ A phone-first tracker for a bodyweight calisthenics routine built around climbin
 - **Weight progression**: hit the top of the rep range on every set and it tells you the next weight (+5 lb upper, +10 lb lower by default). Fall below the range and it suggests dropping about 10%.
 - **How-to guides**: tap the ? next to any exercise or stretch for setup steps, form cues, the most common mistake, easier and harder versions, and a YouTube demo link.
 - **Daily checklist**: every-day essentials (wrists, scapular push-ups, hollow hold, side plank, deep squat) plus that workout's stretches.
-- **Calendar**: activity per day, checklist streak, training days and runs this week.
+- **Calendar**: shape-coded markers that read in grayscale (home ●, gym ■, climb ▲, rest □, run ○, checklist ▬), activity per day, checklist streak, training days and runs this week.
 - **Progress**: trend line per exercise and a "ready to level up" list.
 - **Program editor**: edit every home and gym workout, weight jumps, the essentials and the gym weight unit.
 

@@ -61,18 +61,24 @@ h1,h2,h3{margin:0;font-family:var(--display);font-weight:700;letter-spacing:.01e
 .wd .dd{font-family:var(--display);font-weight:600;font-size:18px;line-height:1}
 .wd[aria-current="date"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .wd.today .dd{color:var(--accent)}
-.marks{display:flex;gap:3px;height:8px;align-items:center}
-.mk{width:7px;height:7px;border-radius:50%;display:inline-block}
-.mk.home{background:var(--home)}.mk.gym{background:var(--gym)}.mk.climb{background:var(--climb)}.mk.rest{background:var(--rest)}
+.marks{display:flex;gap:3px;height:10px;align-items:center}
+/* each type has its own shape so it reads without colour: home ● gym ■ climb ▲ rest □ run ○ checklist ▬ */
+.mk{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.mk.home{background:var(--home)}
+.mk.gym{background:var(--gym);border-radius:1px;width:9px;height:9px}
+.mk.climb{background:var(--climb);border-radius:0;width:10px;height:9px;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.mk.rest{background:transparent;border-radius:1px;width:8px;height:8px;box-shadow:inset 0 0 0 1.6px var(--rest)}
 .mk.run{background:transparent;box-shadow:inset 0 0 0 2px var(--run)}
-.mk.st{width:8px;height:2px;border-radius:2px;background:var(--ink);opacity:.55}
+.mk.st{width:9px;height:3px;border-radius:2px;background:var(--ink);opacity:.6}
 
 /* suggestion */
 .sugg{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
 .srow{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:start;border-top:1px solid var(--line);padding-top:10px}
 .srow:first-of-type{border-top:0;padding-top:0}
 .sdot{width:10px;height:10px;border-radius:50%;margin-top:6px;background:var(--rest)}
-.sdot.good{background:var(--good)}.sdot.easy{background:var(--caution)}.sdot.no{background:var(--rest)}
+.sdot.good{background:var(--good)}
+.sdot.easy{background:linear-gradient(90deg,var(--caution) 50%,transparent 50%);box-shadow:inset 0 0 0 1.6px var(--caution)}
+.sdot.no{background:transparent;box-shadow:inset 0 0 0 1.6px var(--rest)}
 .stext{min-width:0}
 .stext b{font-weight:600;display:block}
 .stext span{font-size:13px;color:var(--muted)}
@@ -189,6 +195,18 @@ textarea.inp{resize:vertical;min-height:64px}
 .fb.down{background:var(--caution-soft);color:var(--caution)}
 .fb.ok{background:var(--good-soft);color:var(--good)}
 .chip.low{background:var(--caution-soft);color:var(--caution)}
+
+/* stopwatch */
+.sw-btn{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:999px;padding:7px 14px;font-weight:600;font-size:14px}
+.sw-btn svg{width:16px;height:16px}
+.sw{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--accent);background:var(--accent-soft);border-radius:12px;padding:10px 12px}
+.sw-time{font-family:var(--display);font-weight:700;font-size:40px;line-height:1;font-variant-numeric:tabular-nums;min-width:3ch}
+.sw-meta{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;font-size:13px}
+.sw-meta b{font-weight:600}
+.sw-meta span{color:var(--muted)}
+.sw.ready .sw-time{color:var(--muted)}
+.sw.hit .sw-time{color:var(--good)}
+.sw-actions{display:flex;gap:8px}
 
 /* how-to */
 .info{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:13px;line-height:1;flex:none;padding:0;display:inline-grid;place-items:center}
@@ -805,7 +823,7 @@ function exBlock(x,rec,mode,d){
   var ready="";
   if(last&&meetsTop(last)&&(!last.tgt||last.tgt.max<=x.max))ready='<span class="chip">Hit the top of the range last time. '+esc(st.up?"Try "+st.up+".":"Slow the tempo or hold longer.")+'</span>';
   else if(last&&last.tgt&&x.sets>1){var lv=last.sets.filter(filled).map(Number);if(lv.length&&lv.reduce(function(a,b){return a+b;},0)/lv.length<last.tgt.min)ready='<span class="chip low">Below the range last time.'+(st.down?" "+esc(st.down)+" is an option.":"")+'</span>';}
-  return '<div class="ex"><div class="ex-head"><div class="ex-name">'+nameHtml+'</div>'+infoBtn(cur)+'<div class="tgt num">'+tgtText(x)+'</div></div>'+ready+'<div class="sets">'+sets+'</div>'+fbHtml(mode+x.id,feedback(x,rec))+'<div class="last">'+lastLine+'</div></div>';
+  return '<div class="ex"><div class="ex-head"><div class="ex-name">'+nameHtml+'</div>'+infoBtn(cur)+'<div class="tgt num">'+tgtText(x)+'</div></div>'+ready+'<div class="sets">'+sets+'</div>'+(x.unit==="sec"?swHtml(x,rec,mode):"")+fbHtml(mode+x.id,feedback(x,rec))+'<div class="last">'+lastLine+'</div></div>';
 }
 function homeCard(d,e){
   var useMin=!!(e&&e.min),t=curTpl(d,e),sg=suggest(d);
@@ -911,6 +929,47 @@ function stretchCard(d,e){
   if(list.length&&n<list.length)h+='<button class="small-btn" data-act="st-all">Mark all done</button>';
   return h+'</section>';
 }
+/* ---------- stopwatch for timed holds ---------- */
+var SW=null,AC=null,WL=null;
+var SW_ICON='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>';
+function beep(f,ms,at){try{if(!AC)return;var o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+(at||0);o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.25,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+ms/1000);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+ms/1000+.05);}catch(_){}}
+function swNext(rec,x){for(var i=0;i<x.sets;i++){var v=rec&&rec.sets?rec.sets[i]:null;if(!filled(v))return i;}return -1;}
+function swSecs(){return SW&&SW.t0?Math.floor((Date.now()-SW.t0)/1000):0;}
+function swHtml(x,rec,mode){
+  var key=mode+x.id;
+  if(SW&&SW.key===key){
+    var ready=!SW.t0,sec=swSecs(),hit=!ready&&sec>=x.min;
+    return '<div class="sw'+(ready?" ready":hit?" hit":"")+'" id="sw-box"><span class="sw-time" id="sw-time">'+(ready?Math.max(1,Math.ceil((SW.readyEnd-Date.now())/1000)):sec)+'</span><div class="sw-meta"><b id="sw-label">'+(ready?"Get in position…":"Set "+(SW.set+1)+" · holding")+'</b><span>Target '+x.min+'–'+x.max+' s. Beeps at '+x.min+' s and '+x.max+' s.</span></div><div class="sw-actions"><button class="primary" data-act="sw-stop">'+(ready?"Cancel":"Stop")+'</button></div></div>';
+  }
+  var n=swNext(rec,x);
+  if(n<0)return "";
+  return '<button class="sw-btn" data-act="sw-start" data-ex="'+esc(x.id)+'" data-mode="'+mode+'">'+SW_ICON+'Time set '+(n+1)+'</button>';
+}
+function swTick(){
+  if(!SW)return;var el=document.getElementById("sw-time"),box=document.getElementById("sw-box"),lab=document.getElementById("sw-label");
+  if(!SW.t0){
+    if(Date.now()>=SW.readyEnd){SW.t0=SW.readyEnd;beep(880,180);if(box)box.className="sw";if(lab)lab.textContent="Set "+(SW.set+1)+" · holding";var bt=box&&box.querySelector("button");if(bt)bt.textContent="Stop";}
+    else{if(el)el.textContent=Math.max(1,Math.ceil((SW.readyEnd-Date.now())/1000));return;}
+  }
+  var s=swSecs();if(el)el.textContent=s;
+  if(s>=SW.min&&!SW.b1){SW.b1=1;beep(660,160);if(box)box.className="sw hit";}
+  if(s>=SW.max&&!SW.b2){SW.b2=1;beep(990,140);beep(990,140,.22);}
+}
+setInterval(swTick,200);
+function swStart(d,id,mode){
+  var x=planEx(d,id,mode);if(!x)return;var e=getEntry(d),bag=e?(mode==="m"?e.mx:e.ex):null,rec=bag&&bag[id];
+  var n=swNext(rec,x);if(n<0)return;
+  try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.resume)AC.resume();}catch(_){AC=null;}
+  SW={key:mode+id,id:id,mode:mode,set:n,min:x.min,max:x.max,readyEnd:Date.now()+3000,t0:0};
+  try{if(navigator.wakeLock)navigator.wakeLock.request("screen").then(function(l){WL=l;}).catch(function(){});}catch(_){}
+}
+function swStop(d){
+  if(!SW)return;var cur=SW;SW=null;try{if(WL){WL.release();WL=null;}}catch(_){}
+  if(!cur.t0)return;
+  var secs=Math.max(1,Math.round((Date.now()-cur.t0)/1000)),x=planEx(d,cur.id,cur.mode);if(!x)return;
+  var e=ensureEntry(d),r=recFor(d,e,x,cur.mode);while(r.sets.length<x.sets)r.sets.push(null);r.sets[cur.set]=secs;autoStart(d,e);touch(d);
+}
+
 /* ---------- how-to panel ---------- */
 function infoBtn(name){return name?'<button class="info" data-act="info" data-name="'+esc(name)+'" aria-label="How to do '+esc(name)+'">?</button>':"";}
 function sheetHtml(){
@@ -1078,12 +1137,14 @@ root.addEventListener("click",function(ev){
   if(a==="info-close"){S.info=null;render();return;}
   switch(a){
     case "tab":S.tab=b.dataset.v;S.confirmReset=false;if(S.tab==="cal")S.calMonth=S.date.slice(0,7);render();window.scrollTo(0,0);return;
-    case "prev":S.date=addDays(d,-1);break;
-    case "next":S.date=addDays(d,1);break;
+    case "prev":SW=null;S.date=addDays(d,-1);break;
+    case "next":SW=null;S.date=addDays(d,1);break;
     case "today":S.date=todayKey();break;
     case "goto":S.date=b.dataset.d;if(S.tab!=="today"){S.tab="today";render();window.scrollTo(0,0);return;}break;
     case "type":e=ensureEntry(d);e.type=b.dataset.v;if(e.type==="gym"&&e.gtpl===undefined&&!(e.gym||[]).some(gHas)){var sgg=suggest(d).gym;loadGym(e,sgg?sgg.t:null);}touch(d);break;
     case "use-gym":var sgy=suggest(d).gym;if(!sgy)return;e=ensureEntry(d);e.type="gym";if(e.gtpl!==sgy.t.id)loadGym(e,sgy.t);touch(d);break;
+    case "sw-start":if(SW)swStop(d);swStart(d,b.dataset.ex,b.dataset.mode);break;
+    case "sw-stop":swStop(d);break;
     case "sess-start":e=ensureEntry(d);e.sess={start:Date.now()};touch(d);break;
     case "sess-finish":e=ensureEntry(d);e.sess=e.sess||{};e.sess.end=Date.now();
       e.sess.min=e.sess.start?Math.max(1,Math.round((e.sess.end-e.sess.start)/60000)):null;
@@ -1155,7 +1216,7 @@ root.addEventListener("input",function(ev){
 });
 
 /* test hook for offline checks; harmless in the page */
-window.__cali={guideFor:function(n){return guideFor(n);},S:S,render:render,gymFeedback:function(x,g){return gymFeedback(x,g);},gymEx:function(i){return gymEx(i);},normalize:function(p){return normalizeProgram(p);},feedback:function(x,r){return feedback(x,r);},suggest:function(d){SC={};HC=null;return suggest(d);}};
+window.__cali={swStart:function(d,i,m){swStart(d,i,m);},swStop:function(d){swStop(d);},sw:function(){return SW;},guideFor:function(n){return guideFor(n);},S:S,render:render,gymFeedback:function(x,g){return gymFeedback(x,g);},gymEx:function(i){return gymEx(i);},normalize:function(p){return normalizeProgram(p);},feedback:function(x,r){return feedback(x,r);},suggest:function(d){SC={};HC=null;return suggest(d);}};
 
 render();
 initStore();
