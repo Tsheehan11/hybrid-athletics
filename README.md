@@ -13,6 +13,7 @@ A phone-first tracker for a bodyweight calisthenics routine built around climbin
 - **Rep feedback**: as you log sets, it tells you when you're above the range (move to the next harder version) or below it (drop to the next easier one).
 - **Gym workouts**: four climber-friendly templates (Lower + Core, Push + Shoulders, Pull + Grip, Full Body). Tapping Gym loads the suggested one, with target sets and reps, last time's weights and the suggested next weight.
 - **Weight progression**: hit the top of the rep range on every set and it tells you the next weight (+5 lb upper, +10 lb lower by default). Fall below the range and it suggests dropping about 10%.
+- **How-to guides**: tap the ? next to any exercise or stretch for setup steps, form cues, the most common mistake, easier and harder versions, and a YouTube demo link.
 - **Daily checklist**: every-day essentials (wrists, scapular push-ups, hollow hold, side plank, deep squat) plus that workout's stretches.
 - **Calendar**: activity per day, checklist streak, training days and runs this week.
 - **Progress**: trend line per exercise and a "ready to level up" list.

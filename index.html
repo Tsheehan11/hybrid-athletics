@@ -13,7 +13,7 @@
   --bg:#EDF0F2; --surface:#FFFFFF; --sunk:#F4F6F8; --ink:#14202A; --muted:#5A6A75; --line:#D3DADF;
   --accent:#2753D8; --accent-ink:#FFFFFF; --accent-soft:#E3E9FB;
   --home:#2753D8; --gym:#B97A0C; --climb:#178A5C; --rest:#7D8C96; --run:#B42D7E;
-  --good:#178A5C; --good-soft:#DDF1E8; --caution:#9A6508; --caution-soft:#F7ECD6; --warn:#B3261E;
+  --good:#178A5C; --good-soft:#DDF1E8; --caution:#9A6508; --caution-soft:#F7ECD6; --scrim:rgba(20,32,42,.45); --warn:#B3261E;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
@@ -21,12 +21,12 @@
   --bg:#0E1418; --surface:#162027; --sunk:#111A20; --ink:#E5ECEF; --muted:#93A3AD; --line:#26343D;
   --accent:#7A9BFF; --accent-ink:#0E1418; --accent-soft:#1C2A4A;
   --home:#7A9BFF; --gym:#E2A83C; --climb:#3EC48D; --rest:#6F808B; --run:#E260AE;
-  --good:#3EC48D; --good-soft:#163428; --caution:#E2A83C; --caution-soft:#3A2C12; --warn:#FF8A80; color-scheme:dark;}}
+  --good:#3EC48D; --good-soft:#163428; --caution:#E2A83C; --caution-soft:#3A2C12; --scrim:rgba(0,0,0,.6); --warn:#FF8A80; color-scheme:dark;}}
 :root[data-theme="dark"]{
   --bg:#0E1418; --surface:#162027; --sunk:#111A20; --ink:#E5ECEF; --muted:#93A3AD; --line:#26343D;
   --accent:#7A9BFF; --accent-ink:#0E1418; --accent-soft:#1C2A4A;
   --home:#7A9BFF; --gym:#E2A83C; --climb:#3EC48D; --rest:#6F808B; --run:#E260AE;
-  --good:#3EC48D; --good-soft:#163428; --caution:#E2A83C; --caution-soft:#3A2C12; --warn:#FF8A80; color-scheme:dark;}
+  --good:#3EC48D; --good-soft:#163428; --caution:#E2A83C; --caution-soft:#3A2C12; --scrim:rgba(0,0,0,.6); --warn:#FF8A80; color-scheme:dark;}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
 .wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:14px 104px;display:flex;flex-direction:column;gap:14px}
@@ -190,6 +190,20 @@ textarea.inp{resize:vertical;min-height:64px}
 .fb.ok{background:var(--good-soft);color:var(--good)}
 .chip.low{background:var(--caution-soft);color:var(--caution)}
 
+/* how-to */
+.info{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:13px;line-height:1;flex:none;padding:0;display:inline-grid;place-items:center}
+.info:hover{color:var(--accent);border-color:var(--accent)}
+.check .info{margin-left:2px}
+.sheet-bg{position:fixed;inset:0;background:var(--scrim);z-index:20}
+.sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:640px;max-height:82vh;overflow-y:auto;background:var(--surface);border-radius:18px 18px 0 0;border:1px solid var(--line);border-bottom:0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;z-index:21}
+.sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.sheet-head h2{font-size:26px;line-height:1.1}
+.cues{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:65ch}
+.tip{margin:0;font-size:14px;background:var(--caution-soft);color:var(--ink);border-radius:9px;padding:8px 10px}
+.ladder{display:flex;flex-wrap:wrap;gap:8px}
+.ladder .text-btn{white-space:normal;text-align:left}
+.demo{display:block;text-align:center;text-decoration:none;padding:12px 14px}
+
 /* program editor */
 .tplchips{display:flex;flex-wrap:wrap;gap:6px}
 .tplchips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-weight:600;font-size:13px}
@@ -340,6 +354,160 @@ var LOAD={climb:{pull:2,grip:2,core:1,wrists:1},run:{legs:1},gym:{push:1,pull:1,
 var GROUP={push:"pushing muscles",pull:"back and arms",legs:"legs",core:"core",grip:"fingers and grip",wrists:"wrists"};
 var KIND={strength:"Strength",skill:"Skill",light:"Light",recovery:"Recovery"};
 
+/* ---------- how-to guides ----------
+   w: what it trains · h: how to do it · m: most common mistake
+   Variants point at a base guide with b and add a note in v. */
+var GUIDE={
+/* handstand family */
+"Wall handstand hold":{w:"Shoulders, balance, wrists",h:["Face away from the wall and kick up with one leg, heels resting on the wall.","Hands shoulder-width, fingers spread, about a hand's length from the wall.","Push the floor away, squeeze glutes, and keep your ribs tucked."],m:"Letting the lower back arch into a banana shape. Squeeze glutes and pull ribs in."},
+"Partial wall walk":{w:"Shoulders, getting used to being upside down",h:["Start in a push-up position with your feet against the wall.","Walk your feet up the wall while your hands walk back toward it.","Stop at a height that feels okay, hold, then walk back down with control."],m:"Going higher than you feel safe. A little higher each week is the plan."},
+"Elevated pike hold (feet on chair)":{w:"Shoulders, the handstand position without the fear",h:["Feet on a chair or couch, hands on the floor.","Walk your hands back until your hips are stacked over your shoulders.","Push the floor away and keep your arms straight by your ears."],m:"Hips drifting behind the hands. Walk the hands closer to the chair."},
+"Chest-to-wall handstand":{w:"Shoulders, straight-line handstand position",h:["Walk your feet up the wall, facing it, until your chest is close to the wall.","Hands about 15 cm from the wall, arms locked.","Point your toes, squeeze legs together, and push tall through the shoulders."],m:"Hands too far from the wall, which arches the back. Walk them closer."},
+"Freestanding handstand attempts":{w:"Balance",h:["Kick up gently in open space with a soft landing area.","Balance with your fingertips: press them to stop falling forward.","Practise bailing out first: twist and step one hand sideways like a cartwheel."],m:"Kicking too hard. Small, controlled kicks build balance faster."},
+/* push-ups */
+"Push-ups":{w:"Chest, shoulders, triceps, core",h:["Hands just wider than shoulders, body in a straight line from head to heels.","Lower until your chest is a fist's height from the floor, elbows about 45° from your body.","Push back up without letting your hips sag."],m:"Hips sagging or piking. Squeeze glutes and brace like a plank."},
+"Incline push-ups":{b:"Push-ups",v:"Hands on a bench, counter or wall. The higher the hands, the easier it is."},
+"Archer push-ups":{w:"Chest, one-arm pushing strength",h:["Hands set very wide.","Lower toward one hand while the other arm straightens out to the side.","Push back up and alternate sides."],m:"Letting the straight arm do the work. Keep most of your weight on the bending arm."},
+"Pseudo-planche push-ups":{w:"Front shoulders, straight-arm strength for planche",h:["Hands by your waist with fingers turned out or back.","Lean your shoulders well in front of your hands.","Keep that lean as you lower and press back up."],m:"Losing the lean at the bottom. Keep the shoulders forward the whole rep."},
+"Diamond push-ups":{w:"Triceps, inner chest",h:["Hands together under your chest, thumbs and index fingers touching.","Lower with elbows close to your sides.","Press back up, body straight."],m:"Elbows flaring out wide. Keep them tucked."},
+"Close-grip incline push-ups":{b:"Diamond push-ups",v:"Hands close together on a bench or counter. Easier than the floor version."},
+"Close-grip pseudo-planche push-ups":{b:"Pseudo-planche push-ups",v:"Hands close together, which puts more work on the triceps."},
+"Pike push-ups":{w:"Shoulders, the path to handstand push-ups",h:["Hips high in an upside-down V, hands shoulder-width.","Lower the top of your head toward a spot in front of your hands.","Press back up to straight arms."],m:"Bending elbows straight out to the sides. Aim them back at about 45°."},
+"Pike push-ups, partial range":{b:"Pike push-ups",v:"Only lower halfway, or put a pillow under your head to shorten the range. Go deeper as you get stronger."},
+"Elevated pike push-ups (feet on chair)":{b:"Pike push-ups",v:"Feet on a chair so more of your weight is over your hands. Hips stay stacked over shoulders."},
+"Wall handstand push-up negatives":{w:"Shoulders, handstand push-up strength",h:["Kick up into a wall handstand.","Lower your head toward the floor as slowly as you can, 3 to 5 seconds.","Come down, then kick up for the next rep."],m:"Dropping fast at the bottom. Put a folded towel under your head."},
+/* rows */
+"Table rows":{w:"Upper back, biceps, balances push-ups",h:["Lie under a sturdy table and grip the edge with hands shoulder-width.","Body straight, heels on the floor.","Pull your chest to the table edge, then lower slowly."],m:"Using a table that tips. Test it first. Hips sagging is the other common one."},
+"Towel door rows":{b:"Table rows",v:"Loop a towel around both handles of a closed, sturdy door. Lean back holding the ends and row yourself in. More upright = easier."},
+"Feet-elevated table rows":{b:"Table rows",v:"Feet on a chair so your body is level. Harder than heels on the floor."},
+"Single-arm table rows":{b:"Table rows",v:"Pull with one arm while the other rests on your chest. Don't let your body twist."},
+"Backpack rows":{w:"Upper back",h:["Load a backpack with books and hold it by the top handle.","Hinge forward with a flat back, one hand on a chair.","Pull the bag to your hip, pause, and lower slowly."],m:"Rounding the back. Hinge at the hips and keep the chest proud."},
+/* side planks */
+"Side plank":{w:"Obliques, side of the core, flag prep",h:["Elbow under your shoulder, feet stacked.","Lift your hips so your body is a straight line.","Push the floor away with your forearm and breathe."],m:"Hips sagging or drifting back. Imagine a wall behind you."},
+"Knee side plank":{b:"Side plank",v:"Knees bent and on the floor. Easier, same straight line from head to knees."},
+"Elevated side plank (feet on chair)":{b:"Side plank",v:"Feet on a chair. Harder, and closer to the line of a human flag."},
+"Elevated side plank, top leg raised":{b:"Side plank",v:"Feet on a chair, then lift the top leg and hold. A big step toward flag strength."},
+"Side plank, top leg raised":{b:"Side plank",v:"Lift the top leg and hold it while keeping hips high."},
+"Side plank leg raises":{w:"Obliques and the outer hip",h:["Set up a side plank on your elbow.","Lift the top leg up and lower it slowly.","Keep the hips high the whole set."],m:"Hips dropping each time the leg lifts."},
+"Knee side plank leg raises":{b:"Side plank leg raises",v:"Bottom knee on the floor. Easier."},
+"Elevated side plank leg raises":{b:"Side plank leg raises",v:"Bottom foot on a chair. Much harder."},
+/* legs */
+"Box pistol to chair":{w:"Single-leg strength",h:["Stand on one leg in front of a chair, the other leg out in front.","Sit back slowly onto the chair, controlling the whole way down.","Stand back up on the same leg without rocking."],m:"Dropping onto the chair. Control the last few centimetres."},
+"Assisted pistol squat":{b:"Box pistol to chair",v:"Hold a door frame or table and squat on one leg to full depth, using your arms only as much as you need."},
+"Box pistol to low step":{b:"Box pistol to chair",v:"Use something lower than a chair, like a stair or a stack of books."},
+"Pistol squat":{w:"Single-leg strength, ankle and hip mobility",h:["Stand on one leg, other leg straight out in front.","Squat all the way down with your arms reaching forward for balance.","Stand up without the knee caving in."],m:"Heel lifting. Hold a light weight out front to counterbalance."},
+"Shrimp squat":{w:"Single-leg strength, quads",h:["Stand on one leg and hold the other foot behind you.","Lower until the back knee touches the floor.","Drive back up through the front foot."],m:"Leaning way forward. Keep the chest up."},
+"Bulgarian split squat":{w:"Quads, glutes, balance",h:["Back foot on a chair, front foot far enough out that the knee stays over the foot.","Lower straight down until the back knee nearly touches the floor.","Push up through the front heel."],m:"Front foot too close, so the heel lifts. Step it out further."},
+"Split squat":{b:"Bulgarian split squat",v:"Both feet on the floor in a long stance. Easier and better for balance."},
+"Backpack Bulgarian split squat":{b:"Bulgarian split squat",v:"Wear a loaded backpack to add weight."},
+"Single-leg calf raises":{w:"Calves, ankles, helps with running",h:["Stand on one foot on a step edge, holding something for balance.","Rise all the way onto your toes.","Lower slowly until your heel drops below the step."],m:"Bouncing. Use the full range and go slow."},
+"Double-leg calf raises":{b:"Single-leg calf raises",v:"Both feet. Easier."},
+"Backpack single-leg calf raises":{b:"Single-leg calf raises",v:"Wear a loaded backpack to add weight."},
+"Glute bridge":{w:"Glutes, hamstrings",h:["Lie on your back, knees bent, feet flat near your hips.","Drive through your heels to lift your hips.","Squeeze glutes at the top for a second, then lower."],m:"Arching the lower back instead of squeezing the glutes."},
+"Single-leg glute bridge":{b:"Glute bridge",v:"One foot on the floor, the other leg straight in the air. Hips stay level."},
+"Hip thrust (shoulders on couch)":{b:"Glute bridge",v:"Upper back on the edge of a couch for a bigger range of motion."},
+"Squats":{w:"Legs",h:["Feet shoulder-width, toes slightly out.","Sit down and back until your thighs are at least parallel.","Stand up, knees tracking over your toes."],m:"Knees caving in."},
+/* core */
+"Hollow hold":{w:"Core tension, used in almost every skill",h:["Lie on your back and press your lower back into the floor.","Lift shoulders and legs a few centimetres off the floor, arms by your sides or overhead.","Hold, breathing shallowly, without letting the back lift."],m:"Lower back peeling off the floor. Bend knees or raise legs higher until it stays down."},
+"Tuck hollow hold":{b:"Hollow hold",v:"Knees bent toward your chest. Easier, same flat lower back."},
+"Hollow hold, arms overhead":{b:"Hollow hold",v:"Arms straight by your ears. The longer lever makes it harder."},
+"Hollow rocks":{b:"Hollow hold",v:"Hold the hollow shape and rock gently back and forth like a banana. Don't let the shape break."},
+"Tuck L-sit":{w:"Core, hip flexors, triceps, shoulder depression",h:["Hands on the floor, parallettes or dumbbells beside your hips.","Push down hard and lift your hips off the floor.","Pull your knees up toward your chest and hold."],m:"Shrugging. Push your shoulders down away from your ears."},
+"Foot-supported L-sit":{b:"Tuck L-sit",v:"Lift your hips while your heels stay lightly on the floor. Builds the push-down strength first."},
+"One-leg L-sit":{b:"Tuck L-sit",v:"One leg tucked, the other straight out. Switch legs each set."},
+"L-sit":{b:"Tuck L-sit",v:"Both legs straight out in front, parallel to the floor."},
+"Reverse plank":{w:"Glutes, back of the shoulders",h:["Sit with legs straight and hands behind your hips, fingers pointing to your feet.","Lift your hips until your body is a straight line.","Squeeze glutes and look up at the ceiling."],m:"Hips sagging. Squeeze glutes harder."},
+"Reverse tabletop":{b:"Reverse plank",v:"Knees bent, feet flat, so your body forms a table. Easier."},
+"Reverse plank, one leg raised":{b:"Reverse plank",v:"Lift one leg and hold. Harder."},
+/* balance */
+"Frog stand":{w:"Balance, wrists, the first step toward handstands",h:["Squat down with hands flat on the floor, shoulder-width.","Rest your knees on the backs of your upper arms.","Lean forward slowly until your feet float. Grip with your fingertips to stop tipping."],m:"Not leaning far enough. Put a pillow in front of your face so it feels safe to lean."},
+"Frog stand, toes on floor":{b:"Frog stand",v:"Keep your toes lightly touching the floor while you shift weight onto your hands."},
+"Crow pose":{w:"Balance, wrists, core",h:["Same setup as a frog stand, but knees higher up on the triceps.","Lean forward and lift your feet.","Round your upper back slightly and look a bit ahead."],m:"Looking straight down, which tips you forward."},
+"Crow pose, straighter arms":{b:"Crow pose",v:"Push the floor away to straighten your arms more. Harder."},
+/* gym: legs */
+"Back squat":{w:"Quads, glutes, overall leg strength",h:["Bar on your upper back, feet shoulder-width, toes slightly out.","Brace your core, then sit down between your hips until thighs are at least parallel.","Drive up, keeping your chest up and knees over your toes."],m:"Knees caving in or the chest folding forward. Lighten the bar until it's clean."},
+"Goblet squat":{b:"Back squat",v:"Hold one dumbbell at your chest. Easier to learn and kind to the lower back."},
+"Paused back squat":{b:"Back squat",v:"Pause for 2 seconds at the bottom of every rep. Use less weight."},
+"Front squat":{b:"Back squat",v:"Bar on the front of your shoulders. More upright and more quads."},
+"Leg press":{w:"Quads, glutes",h:["Feet shoulder-width in the middle of the platform.","Lower until knees reach about 90° without your lower back lifting off the pad.","Press up without locking your knees hard."],m:"Lowering so far that the hips curl off the seat."},
+"Romanian deadlift":{w:"Hamstrings, glutes, lower back",h:["Hold the bar at your hips, soft knees.","Push your hips back and slide the bar down your thighs with a flat back.","Stop when you feel a strong hamstring stretch, then drive the hips forward."],m:"Rounding the back to reach lower. Stop where your back stays flat."},
+"Dumbbell Romanian deadlift":{b:"Romanian deadlift",v:"Same hinge with a dumbbell in each hand."},
+"Single-leg dumbbell RDL":{b:"Romanian deadlift",v:"Hinge on one leg while the other reaches back. Harder for balance, lighter weight."},
+"Hip thrust":{w:"Glutes",h:["Upper back on a bench, bar across your hips with a pad.","Drive through your heels to lift the hips until your body is level.","Squeeze at the top, chin tucked."],m:"Arching the lower back at the top instead of finishing with the glutes."},
+"Dumbbell Bulgarian split squat":{b:"Bulgarian split squat",v:"Hold a dumbbell in each hand."},
+"Dumbbell split squat":{b:"Bulgarian split squat",v:"Both feet on the floor, dumbbells in hand. Easier for balance."},
+"Barbell Bulgarian split squat":{b:"Bulgarian split squat",v:"Bar on your back. Lets you load it heavier."},
+"Lying leg curl":{w:"Hamstrings",h:["Lie face down with the pad just above your heels.","Curl your heels toward your glutes.","Lower slowly for 2 to 3 seconds."],m:"Hips lifting off the pad to swing the weight."},
+"Seated leg curl":{b:"Lying leg curl",v:"Same curl sitting down."},
+"Nordic curl negatives":{w:"Hamstrings, strongly protective against strains",h:["Kneel with your ankles anchored.","Keep your body straight and lower forward as slowly as you can.","Catch yourself with your hands and push back up."],m:"Bending at the hips. Keep a straight line from knees to head."},
+"Hanging knee raise":{w:"Lower abs, grip",h:["Hang from a bar with straight arms and engaged shoulders.","Curl your knees up toward your chest, tilting the pelvis up.","Lower slowly without swinging."],m:"Swinging for momentum. Pause at the bottom of each rep."},
+"Captain's chair knee raise":{b:"Hanging knee raise",v:"Forearms on the chair's pads. Takes grip out of it."},
+"Hanging leg raise":{b:"Hanging knee raise",v:"Legs straight. Raise them to at least hip height."},
+"Toes to bar":{b:"Hanging knee raise",v:"Straight legs all the way up to touch the bar."},
+"Standing calf raise":{b:"Single-leg calf raises",v:"On the calf raise machine or holding weights. Full stretch at the bottom."},
+"Seated calf raise":{b:"Single-leg calf raises",v:"Seated machine, which works the deeper calf muscle."},
+/* gym: push */
+"Bench press":{w:"Chest, shoulders, triceps",h:["Eyes under the bar, feet planted, shoulder blades squeezed together.","Lower the bar to your mid-chest with elbows about 45° from your body.","Press up and slightly back over your shoulders."],m:"Bouncing off the chest or flaring elbows straight out. Use a spotter or safeties near your limit."},
+"Dumbbell bench press":{b:"Bench press",v:"A dumbbell in each hand. Easier on the shoulders and no spotter needed."},
+"Paused bench press":{b:"Bench press",v:"Pause for a second on your chest every rep. Use less weight."},
+"Machine chest press":{b:"Bench press",v:"Machine version. Good for learning the movement safely."},
+"Overhead press":{w:"Shoulders, triceps, core",h:["Bar at your collarbone, grip just outside your shoulders.","Squeeze glutes and brace, then press straight up, moving your head back out of the way.","Finish with the bar over your mid-foot and biceps by your ears."],m:"Leaning way back. Squeeze glutes so the lower back stays neutral."},
+"Seated dumbbell shoulder press":{b:"Overhead press",v:"Seated, a dumbbell in each hand. Easier to control."},
+"Landmine press":{b:"Overhead press",v:"Press one end of a barbell anchored in a corner. Kind to the shoulders."},
+"Incline dumbbell press":{w:"Upper chest, front shoulders",h:["Bench at about 30°.","Lower the dumbbells to the sides of your upper chest.","Press up and slightly together."],m:"Setting the bench too steep, which turns it into a shoulder press."},
+"Dips":{w:"Chest, triceps",h:["Support yourself on parallel bars with straight arms.","Lower until your upper arms are about parallel to the floor, leaning slightly forward.","Press back up."],m:"Going too deep too soon. Stop at parallel."},
+"Cable face pull":{w:"Rear shoulders, rotator cuff, posture. Great for climbers.",h:["Rope at upper-chest height, palms facing each other.","Pull the rope toward your face, splitting the ends past your ears.","Finish with elbows high and thumbs pointing back, then return slowly."],m:"Going too heavy and leaning back. Light weight, strict reps."},
+"Band face pull":{b:"Cable face pull",v:"Same movement with a resistance band anchored at face height."},
+"Dumbbell lateral raise":{w:"Side shoulders",h:["Stand with dumbbells at your sides.","Raise them out to the sides to shoulder height with a slight elbow bend.","Lower slowly."],m:"Swinging or shrugging. Use lighter weights than you think."},
+"Cable lateral raise":{b:"Dumbbell lateral raise",v:"One arm at a time with a low cable. Constant tension."},
+"Triceps rope pushdown":{w:"Triceps",h:["Rope at the top of the cable, elbows pinned to your sides.","Push down until your arms are straight, spreading the rope ends.","Return until forearms pass parallel."],m:"Elbows drifting forward so the shoulders take over."},
+"Overhead cable triceps extension":{b:"Triceps rope pushdown",v:"Face away from the cable and extend the rope overhead. Stretches the long head of the triceps."},
+/* gym: pull */
+"Pull-up":{w:"Lats, upper back, biceps",h:["Hang with hands just wider than shoulders, palms away.","Pull your shoulder blades down, then pull until your chin clears the bar.","Lower all the way to straight arms."],m:"Half reps. Full hang at the bottom every time."},
+"Neutral-grip pull-up":{b:"Pull-up",v:"Palms facing each other. Often easier on the elbows."},
+"Weighted pull-up":{b:"Pull-up",v:"Add weight with a belt or a dumbbell between your feet. Log the added weight."},
+"Lat pulldown":{w:"Lats, upper back",h:["Thighs under the pad, grip just wider than shoulders.","Pull the bar to your upper chest, leading with your elbows.","Let it rise slowly to full stretch."],m:"Leaning way back and yanking. Stay mostly upright."},
+"Seated cable row":{w:"Mid back, lats",h:["Sit tall with a slight knee bend.","Pull the handle to your stomach, squeezing shoulder blades together.","Return slowly, letting your shoulders reach forward a little."],m:"Rocking the torso to move the weight."},
+"Chest-supported dumbbell row":{b:"Seated cable row",v:"Lie chest-down on an incline bench and row two dumbbells. No cheating possible."},
+"Single-arm dumbbell row":{w:"Lats, upper back",h:["One knee and hand on a bench, back flat.","Pull the dumbbell toward your hip.","Lower until your arm is straight."],m:"Twisting the torso open to lift more."},
+"Meadows row":{b:"Single-arm dumbbell row",v:"Row one end of a landmine barbell, standing side-on. Big lat stretch."},
+"Reverse wrist curl":{w:"Wrist extensors. Helps prevent climber's elbow.",h:["Forearms on your thighs or a bench, palms down, light weight.","Lift the back of your hand toward you.","Lower slowly for 3 seconds."],m:"Going heavy. These are for tendon health, so keep them light and slow."},
+"Wrist roller":{b:"Reverse wrist curl",v:"Roll a weight up on a cord by twisting a handle, then lower it slowly."},
+"Hammer curl":{w:"Forearms, biceps, elbow health",h:["Dumbbells at your sides, palms facing in.","Curl up without swinging.","Lower slowly."],m:"Swinging the body."},
+"Cable rope curl":{b:"Hammer curl",v:"Rope on a low cable. Constant tension."},
+/* gym: full body */
+"Trap bar deadlift":{w:"Whole posterior chain, legs, grip",h:["Stand in the middle of the bar, grip the handles.","Hips down, chest up, back flat, then brace.","Stand up by pushing the floor away. Lower under control."],m:"Rounding the back off the floor. Brace hard before every rep."},
+"Conventional deadlift":{b:"Trap bar deadlift",v:"Straight bar over mid-foot. More hip hinge. Learn it light."},
+"Pallof press":{w:"Anti-rotation core strength, great for flag work",h:["Stand side-on to a cable at chest height, handle at your chest.","Press the handle straight out and hold for a breath.","Bring it back without letting the cable twist you."],m:"Rotating toward the cable. Stand further away only if you can stay square."},
+"Cable woodchop":{b:"Pallof press",v:"Rotate diagonally from high to low, turning through your hips and upper back, not your lower back."},
+/* daily essentials + stretches */
+"Wrist circles":{w:"Wrist warm-up before handstands, L-sits and climbing",h:["Interlace your fingers and roll your wrists in circles.","Then on all fours, rock gently forward and back over your hands.","Try fingers forward, sideways and backward."],m:"Rushing it. Your wrists take a lot of load, so give them a proper 30 seconds."},
+"Scapular push-ups":{w:"Shoulder blade control, shoulder health",h:["Push-up position, arms straight.","Without bending your elbows, let your chest sink between your shoulder blades.","Then push the floor away to spread them apart."],m:"Bending the elbows. Only the shoulder blades move."},
+"Deep squat":{w:"Hip and ankle mobility",h:["Sit into the bottom of a squat with heels down.","Elbows press your knees out gently.","Relax and breathe. Hold a door frame if you tip back."],m:"Heels lifting. Put a book under your heels while you work on ankle mobility."},
+"Cat-cow":{w:"Spine mobility",h:["On all fours.","Breathe in as you drop your belly and lift your head.","Breathe out as you round your back toward the ceiling."],m:"Moving fast. Slow, full range."},
+"World's greatest stretch":{w:"Hips, hamstrings, upper back rotation",h:["Step into a deep lunge, both hands inside the front foot.","Drop your back knee if needed and sink your hips.","Rotate and reach the inside arm toward the ceiling, then switch sides."],m:"Rushing the rotation. Follow your hand with your eyes."},
+"Pancake":{w:"Inner thighs and hamstrings. Helps with L-sits and straddle positions.",h:["Sit with legs straight and as wide as is comfortable, toes up.","Keep your back flat and hinge forward from the hips.","Walk your hands forward and breathe into the stretch."],m:"Rounding the back to get lower. Hinge from the hips."},
+"Hip flexor":{w:"Front of the hips, tight from sitting",h:["Kneel in a lunge with your back knee on a cushion.","Squeeze the glute of the back leg and tuck your pelvis under.","Shift forward slightly until you feel the front of the hip."],m:"Arching the lower back instead of tucking the pelvis."},
+"Couch stretch":{w:"Quads and hip flexors",h:["Kneel facing away from a couch with your back shin up against it.","Front foot on the floor in a lunge.","Squeeze the back glute and bring your torso upright slowly."],m:"Going straight to upright. Lean forward on the front knee first."},
+"Couch/quad stretch":{b:"Couch stretch",v:"An easier version: stand, hold one foot behind you, and pull the heel toward your glute."},
+"Hamstring stretch":{w:"Back of the legs",h:["Put one heel up on a low step or chair, leg straight.","Keep your back flat and hinge forward from the hips.","Stop at a strong but comfortable stretch."],m:"Rounding the back to reach your toes."},
+"Shoulder stretch":{w:"Shoulders and lats, tight from climbing",h:["Hold a door frame with one arm overhead.","Step through and turn away until you feel the stretch.","Breathe and relax into it."],m:"Shrugging. Keep the shoulder down."},
+"Chest/shoulder stretch":{w:"Chest and front shoulders",h:["Forearm against a door frame, elbow at shoulder height.","Step through gently until you feel the chest open.","Switch sides."],m:"Pushing into pain. A mild stretch is enough."},
+"Lat stretch":{w:"Lats, tight from pulling and climbing",h:["Grab a rack or door frame at hip height.","Sit your hips back and let your arm straighten overhead.","Lean away until you feel the side of your back stretch."],m:"Rounding forward instead of sitting back."},
+"Wrist/forearm":{w:"Forearm flexors and extensors, important for climbers",h:["Arm straight, palm up, gently pull the fingers back with the other hand.","Then palm down, fingers pointing down, gently pull the back of the hand.","Hold each about 20 to 30 seconds."],m:"Pulling hard. Gentle is better for tendons."},
+"Cossack squat":{w:"Inner thighs, hip mobility",h:["Stand with feet very wide.","Squat down over one leg while the other stays straight with toes up.","Shift side to side, staying low."],m:"Heel lifting on the bent leg. Hold a door frame if you need balance."},
+"Straddle":{b:"Pancake",v:"Sit in a wide straddle and reach toward one foot, then the middle, then the other foot."},
+"Pike":{w:"Hamstrings and lower back. Helps with L-sits and compression.",h:["Sit with legs together and straight, toes up.","Hinge forward from the hips with a flat back.","Reach toward your feet and breathe."],m:"Rounding the back. Bend the knees slightly if you need to."},
+"Shoulder flexion":{w:"Overhead mobility for handstands",h:["Kneel facing a bench or couch with your elbows on it.","Hold your hands together and sink your chest toward the floor.","Keep your ribs tucked."],m:"Arching the lower back instead of opening the shoulders."}
+};
+function guideFor(name){
+  var g=GUIDE[name];if(!g){var n=(name||"").trim().toLowerCase();for(var k in GUIDE)if(k.toLowerCase()===n){g=GUIDE[k];break;}}
+  if(!g)return null;
+  if(g.b){var base=GUIDE[g.b]||{};return {w:base.w,h:base.h||[],m:base.m,v:g.v,base:g.b};}
+  return {w:g.w,h:g.h||[],m:g.m,v:null,base:null};
+}
+function demoUrl(name){return "https://www.youtube.com/results?search_query="+encodeURIComponent(name.replace(/\(.*?\)/g,"").trim()+" proper form");}
+
 /* ---------- dates ---------- */
 function pad(n){return String(n).padStart(2,"0");}
 function key(dt){return dt.getFullYear()+"-"+pad(dt.getMonth()+1)+"-"+pad(dt.getDate());}
@@ -353,7 +521,7 @@ function mondayOf(k){var d=dowOf(k);return addDays(k,-((d+6)%7));}
 var DN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 /* ---------- state ---------- */
-var S={program:defaultProgram(), months:{}, date:todayKey(), tab:"today", calMonth:todayKey().slice(0,7), progTpl:"daily", confirmReset:false, loaded:false, mode:"loading"};
+var S={info:null,program:defaultProgram(), months:{}, date:todayKey(), tab:"today", calMonth:todayKey().slice(0,7), progTpl:"daily", confirmReset:false, loaded:false, mode:"loading"};
 var root=document.getElementById("app");
 
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
@@ -637,7 +805,7 @@ function exBlock(x,rec,mode,d){
   var ready="";
   if(last&&meetsTop(last)&&(!last.tgt||last.tgt.max<=x.max))ready='<span class="chip">Hit the top of the range last time. '+esc(st.up?"Try "+st.up+".":"Slow the tempo or hold longer.")+'</span>';
   else if(last&&last.tgt&&x.sets>1){var lv=last.sets.filter(filled).map(Number);if(lv.length&&lv.reduce(function(a,b){return a+b;},0)/lv.length<last.tgt.min)ready='<span class="chip low">Below the range last time.'+(st.down?" "+esc(st.down)+" is an option.":"")+'</span>';}
-  return '<div class="ex"><div class="ex-head"><div class="ex-name">'+nameHtml+'</div><div class="tgt num">'+tgtText(x)+'</div></div>'+ready+'<div class="sets">'+sets+'</div>'+fbHtml(mode+x.id,feedback(x,rec))+'<div class="last">'+lastLine+'</div></div>';
+  return '<div class="ex"><div class="ex-head"><div class="ex-name">'+nameHtml+'</div>'+infoBtn(cur)+'<div class="tgt num">'+tgtText(x)+'</div></div>'+ready+'<div class="sets">'+sets+'</div>'+fbHtml(mode+x.id,feedback(x,rec))+'<div class="last">'+lastLine+'</div></div>';
 }
 function homeCard(d,e){
   var useMin=!!(e&&e.min),t=curTpl(d,e),sg=suggest(d);
@@ -705,8 +873,8 @@ function gymCard(d,e){
     var x=g.ref?gymEx(g.ref):null,last=lastGym(g.name,d),plan=gymPlan(x,last),nameHtml;
     if(x){var names=allNames(x);if(names.indexOf(g.name)<0)names.push(g.name);
       var tag=function(n){return n===x.name?"":(x.easier||[]).indexOf(n)>=0?" (easier)":(x.harder||[]).indexOf(n)>=0?" (harder)":" (swap)";};
-      nameHtml='<div class="ex-name">'+(names.length>1?'<select data-ch="gsub" data-i="'+i+'" aria-label="Exercise version">'+names.map(function(n){return '<option value="'+esc(n)+'"'+(n===g.name?" selected":"")+'>'+esc(n)+tag(n)+'</option>';}).join("")+'</select>':esc(g.name))+'</div><div class="tgt num">'+tgtText(x)+'</div><button class="del" data-act="gdel" data-i="'+i+'" aria-label="Remove exercise">×</button>';
-    } else nameHtml='<input class="inp" list="gym-names" data-in="gname" data-i="'+i+'" value="'+esc(g.name)+'" placeholder="Exercise name" aria-label="Exercise name"><button class="del" data-act="gdel" data-i="'+i+'" aria-label="Remove exercise">×</button>';
+      nameHtml='<div class="ex-name">'+(names.length>1?'<select data-ch="gsub" data-i="'+i+'" aria-label="Exercise version">'+names.map(function(n){return '<option value="'+esc(n)+'"'+(n===g.name?" selected":"")+'>'+esc(n)+tag(n)+'</option>';}).join("")+'</select>':esc(g.name))+'</div>'+infoBtn(g.name)+'<div class="tgt num">'+tgtText(x)+'</div><button class="del" data-act="gdel" data-i="'+i+'" aria-label="Remove exercise">×</button>';
+    } else nameHtml='<input class="inp" list="gym-names" data-in="gname" data-i="'+i+'" value="'+esc(g.name)+'" placeholder="Exercise name" aria-label="Exercise name">'+(guideFor(g.name)?infoBtn(g.name):"")+'<button class="del" data-act="gdel" data-i="'+i+'" aria-label="Remove exercise">×</button>';
     h+='<div class="gym-ex"><div class="ex-head" style="align-items:center">'+nameHtml+'</div>';
     if(plan&&plan.k==="up")h+='<span class="chip">Hit the top of the range last time.'+(plan.w!=null?" Try "+esc(plan.w)+" "+esc(u)+".":"")+'</span>';
     if(plan&&plan.k==="down")h+='<span class="chip low">Below the range last time.'+(plan.w!=null?" Try "+esc(plan.w)+" "+esc(u)+".":"")+'</span>';
@@ -737,12 +905,29 @@ function stretchCard(d,e){
   var h='<section class="card"><div class="card-head"><h2>Daily checklist</h2><span class="label num">'+n+' of '+list.length+' done</span></div>';
   h+='<div class="progressbar" aria-hidden="true"><i style="width:'+(list.length?Math.round(n/list.length*100):0)+'%"></i></div>';
   function grp(g,lbl){var items=list.filter(function(s){return s.g===g;});if(!items.length)return "";
-    return '<div class="label group-lbl">'+lbl+'</div><div class="checks">'+items.map(function(s){return '<label class="check"><input type="checkbox" data-ch="st" data-name="'+esc(s.name)+'"'+(st[s.name]?" checked":"")+'><span class="nm">'+esc(s.name)+'</span><span class="amt">'+esc(s.amt||"")+'</span></label>';}).join("")+'</div>';}
+    return '<div class="label group-lbl">'+lbl+'</div><div class="checks">'+items.map(function(s){return '<label class="check"><input type="checkbox" data-ch="st" data-name="'+esc(s.name)+'"'+(st[s.name]?" checked":"")+'><span class="nm">'+esc(s.name)+'</span><span class="amt">'+esc(s.amt||"")+'</span>'+infoBtn(s.name)+'</label>';}).join("")+'</div>';}
   h+=grp("daily","Every day");
   h+=grp("day",(e&&e.type==="climb")?"Stretches · climbing day":"Stretches");
   if(list.length&&n<list.length)h+='<button class="small-btn" data-act="st-all">Mark all done</button>';
   return h+'</section>';
 }
+/* ---------- how-to panel ---------- */
+function infoBtn(name){return name?'<button class="info" data-act="info" data-name="'+esc(name)+'" aria-label="How to do '+esc(name)+'">?</button>':"";}
+function sheetHtml(){
+  var n=S.info;if(!n)return "";var g=guideFor(n),st=stepsByName(n);
+  var h='<div class="sheet-bg" data-act="info-close"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-head"><h2 id="sheet-title">'+esc(n)+'</h2><button class="icon-btn" id="sheet-close" data-act="info-close" aria-label="Close">×</button></div>';
+  if(g){
+    if(g.w)h+='<p class="note"><b>Works:</b> '+esc(g.w)+'</p>';
+    if(g.v)h+='<div class="warm"><b>This version</b> · '+esc(g.v)+'</div>';
+    if(g.h.length)h+='<div class="label">'+(g.base?"How to do "+esc(g.base.toLowerCase()):"How to do it")+'</div><ol class="cues">'+g.h.map(function(c){return '<li>'+esc(c)+'</li>';}).join("")+'</ol>';
+    if(g.m)h+='<div class="label">Watch out for</div><p class="tip">'+esc(g.m)+'</p>';
+  } else h+='<p class="note">No written guide for this one yet. The video below shows good form.</p>';
+  if(st.down||st.up)h+='<div class="ladder">'+(st.down?'<button class="text-btn" data-act="info" data-name="'+esc(st.down)+'">Easier: '+esc(st.down)+'</button>':"")+(st.up?'<button class="text-btn" data-act="info" data-name="'+esc(st.up)+'">Harder: '+esc(st.up)+'</button>':"")+'</div>';
+  h+='<a class="primary demo" href="'+esc(demoUrl(n))+'" target="_blank" rel="noopener">Watch a demo on YouTube ↗</a>';
+  return h+'</div>';
+}
+document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&S.info){S.info=null;render();}});
+
 /* ---------- workout timer ---------- */
 function clockText(ms){var s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60);s=s%60;return (h?h+":"+pad(m):m)+":"+pad(s);}
 function fmtDur(min){return min<60?min+" min":Math.floor(min/60)+"h "+pad(min%60)+"m";}
@@ -869,7 +1054,10 @@ function render(){
   var body=S.tab==="today"?viewToday():S.tab==="cal"?viewCalendar():S.tab==="prog"?viewProgress():viewProgram();
   root.innerHTML='<div class="wrap"><div class="top"><span class="brand">Cali &amp; Climb Log</span><span class="status" id="status" data-k="'+statusState.k+'">'+esc(statusState.t)+'</span></div>'+body+'</div>'+
     '<nav class="nav" aria-label="Sections"><div class="nav-in">'+[["today","Today"],["cal","Calendar"],["prog","Progress"],["plan","Program"]].map(function(t){return '<button data-act="tab" data-v="'+t[0]+'"'+(S.tab===t[0]?' aria-current="page"':"")+'>'+t[1]+'</button>';}).join("")+'</div></nav>';
+  if(S.info)root.insertAdjacentHTML("beforeend",sheetHtml());
+  if(document.body)document.body.style.overflow=S.info?"hidden":"";
   window.scrollTo(0,y);
+  if(S.info){var cb=document.getElementById("sheet-close");if(cb&&cb.focus)cb.focus();}
 }
 
 /* ---------- events ---------- */
@@ -886,6 +1074,8 @@ function recFor(d,e,x,mode){
 root.addEventListener("click",function(ev){
   var b=ev.target.closest("[data-act]");if(!b||b.disabled)return;
   var a=b.dataset.act,d=S.date,e;
+  if(a==="info"){ev.preventDefault();ev.stopPropagation();S.info=b.dataset.name;render();return;}
+  if(a==="info-close"){S.info=null;render();return;}
   switch(a){
     case "tab":S.tab=b.dataset.v;S.confirmReset=false;if(S.tab==="cal")S.calMonth=S.date.slice(0,7);render();window.scrollTo(0,0);return;
     case "prev":S.date=addDays(d,-1);break;
@@ -965,7 +1155,7 @@ root.addEventListener("input",function(ev){
 });
 
 /* test hook for offline checks; harmless in the page */
-window.__cali={S:S,render:render,gymFeedback:function(x,g){return gymFeedback(x,g);},gymEx:function(i){return gymEx(i);},normalize:function(p){return normalizeProgram(p);},feedback:function(x,r){return feedback(x,r);},suggest:function(d){SC={};HC=null;return suggest(d);}};
+window.__cali={guideFor:function(n){return guideFor(n);},S:S,render:render,gymFeedback:function(x,g){return gymFeedback(x,g);},gymEx:function(i){return gymEx(i);},normalize:function(p){return normalizeProgram(p);},feedback:function(x,r){return feedback(x,r);},suggest:function(d){SC={};HC=null;return suggest(d);}};
 
 render();
 initStore();
