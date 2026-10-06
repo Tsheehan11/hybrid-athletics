@@ -11,10 +11,12 @@ A phone-first tracker for a bodyweight calisthenics routine built around climbin
 - **Last-time numbers**: each set box shows what you did last time, so progressive overload is built in.
 - **Easier and harder versions**: every exercise has a ladder of versions. Pick one from the dropdown.
 - **Rep feedback**: as you log sets, it tells you when you're above the range (move to the next harder version) or below it (drop to the next easier one).
+- **Gym workouts**: four climber-friendly templates (Lower + Core, Push + Shoulders, Pull + Grip, Full Body). Tapping Gym loads the suggested one, with target sets and reps, last time's weights and the suggested next weight.
+- **Weight progression**: hit the top of the rep range on every set and it tells you the next weight (+5 lb upper, +10 lb lower by default). Fall below the range and it suggests dropping about 10%.
 - **Daily checklist**: every-day essentials (wrists, scapular push-ups, hollow hold, side plank, deep squat) plus that workout's stretches.
 - **Calendar**: activity per day, checklist streak, training days and runs this week.
 - **Progress**: trend line per exercise and a "ready to level up" list.
-- **Program editor**: edit every workout, the essentials and the gym weight unit.
+- **Program editor**: edit every home and gym workout, weight jumps, the essentials and the gym weight unit.
 
 ## How the suggestions work
 
@@ -32,6 +34,7 @@ score = overlap with recent load
 The lowest score wins. After 3 hard days in a row, or 6 active days in a row, recovery and light workouts are favoured instead.
 
 - **Climbing**: skipped the day after a climb; easier problems suggested after a gym day.
+- **Gym**: the same overlap scoring over the gym templates, so the day after climbing it avoids Pull + Grip, and the day after a push session it avoids pushing.
 - **Running**: easy only after a heavy leg day, a day off suggested after a run, capped at 3 a week while building up.
 
 ## Where data is saved

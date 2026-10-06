@@ -232,6 +232,7 @@ textarea.inp{resize:vertical;min-height:64px}
    suggestion logic uses to keep a sensible rotation. */
 function X(id,name,sets,min,max,unit,side,easier,harder,other){return {id:id,name:name,sets:sets,min:min,max:max,unit:unit,side:!!side,easier:easier||[],harder:harder||[],other:other||[]};}
 function T(name,amt){return {name:name,amt:amt};}
+function G(id,name,sets,min,max,side,inc,easier,harder,other){var x=X(id,name,sets,min,max,"reps",side,easier,harder,other);x.inc=inc;return x;}
 /* easier: closest version first. harder: next step first. other: sideways swaps. */
 var HS_EASY=["Partial wall walk","Elevated pike hold (feet on chair)"],HS_HARD=["Chest-to-wall handstand","Freestanding handstand attempts"];
 var HOLLOW_E=["Tuck hollow hold"],HOLLOW_H=["Hollow hold, arms overhead"],HOLLOW_O=["Hollow rocks"];
@@ -295,6 +296,40 @@ function rawProgram(){
     ],st:[T("Cossack squat","5/side"),T("Pancake","60s"),T("Pike","60s"),T("Hip flexor","60s/side"),T("Couch stretch","45s/side"),T("Shoulder stretch","45s/side")]},
     {id:"mob",title:"Mobility + Recovery",kind:"recovery",load:{},warm:"",note:"No strength work today. About 10 minutes of stretching.",ex:[],st:[
       T("Cat-cow","×10"),T("World's greatest stretch","5/side"),T("Pancake","60s"),T("Hip flexor","45s/side"),T("Shoulder stretch","45s/side"),T("Wrist/forearm","1–2 min")]}
+  ],
+  gtpl:[
+    {id:"g-lower",title:"Lower + Core",kind:"strength",load:{legs:2,core:1},warm:"5 min bike or rower · Goblet squats ×10 · 2 light warm-up sets of squats",note:"Leave 1–2 reps in reserve on squats and RDLs. Legs barely affect climbing, so this fits the day before a climb.",ex:[
+      G("gl1","Back squat",3,5,8,0,10,["Goblet squat"],["Paused back squat"],["Leg press","Front squat"]),
+      G("gl2","Romanian deadlift",3,6,10,0,10,["Dumbbell Romanian deadlift"],["Single-leg dumbbell RDL"],["Hip thrust"]),
+      G("gl3","Dumbbell Bulgarian split squat",3,8,12,1,5,["Dumbbell split squat"],["Barbell Bulgarian split squat"]),
+      G("gl4","Lying leg curl",3,10,15,0,5,[],["Nordic curl negatives"],["Seated leg curl"]),
+      G("gl5","Hanging knee raise",3,10,15,0,0,["Captain's chair knee raise"],["Hanging leg raise","Toes to bar"]),
+      G("gl6","Standing calf raise",3,10,15,0,10,[],[],["Seated calf raise"])
+    ],st:[T("Couch/quad stretch","45s/side"),T("Hamstring stretch","45s/side"),T("Pancake","60s")]},
+    {id:"g-push",title:"Push + Shoulders",kind:"strength",load:{push:2,core:1},warm:"Band pull-aparts ×15 · Arm circles ×20 · 2 light warm-up sets of bench",note:"Pushing balances all the pulling from climbing. Face pulls keep your shoulders healthy.",ex:[
+      G("gp1","Bench press",3,5,8,0,5,["Dumbbell bench press"],["Paused bench press"]),
+      G("gp2","Overhead press",3,6,10,0,5,["Seated dumbbell shoulder press"],[],["Landmine press"]),
+      G("gp3","Incline dumbbell press",3,8,12,0,5,["Machine chest press"],[],["Dips"]),
+      G("gp4","Cable face pull",3,12,15,0,5,[],[],["Band face pull"]),
+      G("gp5","Dumbbell lateral raise",3,12,15,0,5,[],[],["Cable lateral raise"]),
+      G("gp6","Triceps rope pushdown",2,10,15,0,5,[],[],["Overhead cable triceps extension"])
+    ],st:[T("Chest/shoulder stretch","45s/side"),T("Lat stretch","45s/side"),T("Wrist/forearm","1 min")]},
+    {id:"g-pull",title:"Pull + Grip",kind:"strength",load:{pull:2,grip:1},warm:"Band pull-aparts ×15 · Scap pull-ups ×8 · 1 light set of rows",note:"Climbing already trains pulling hard. Do this on a non-climbing day, and not the day before a climb.",ex:[
+      G("gu1","Pull-up",3,5,10,0,5,["Lat pulldown"],["Weighted pull-up"],["Neutral-grip pull-up"]),
+      G("gu2","Seated cable row",3,8,12,0,10,[],[],["Chest-supported dumbbell row"]),
+      G("gu3","Single-arm dumbbell row",3,8,12,1,5,[],[],["Meadows row"]),
+      G("gu4","Cable face pull",3,12,15,0,5,[],[],["Band face pull"]),
+      G("gu5","Reverse wrist curl",2,15,20,0,5,[],[],["Wrist roller"]),
+      G("gu6","Hammer curl",2,10,12,0,5,[],[],["Cable rope curl"])
+    ],st:[T("Lat stretch","45s/side"),T("Chest/shoulder stretch","45s/side"),T("Wrist/forearm","1–2 min")]},
+    {id:"g-full",title:"Full Body",kind:"strength",load:{push:1,legs:1,pull:1,core:1},warm:"5 min bike or rower · Band pull-aparts ×15 · 1 light set of each lift",note:"Best when you only get one gym day in a week.",ex:[
+      G("gf1","Trap bar deadlift",3,4,6,0,10,["Dumbbell Romanian deadlift"],[],["Conventional deadlift"]),
+      G("gf2","Dumbbell bench press",3,8,12,0,5,["Machine chest press"],["Bench press"]),
+      G("gf3","Goblet squat",3,8,12,0,5,[],["Back squat"],["Leg press"]),
+      G("gf4","Seated cable row",3,8,12,0,10,[],[],["Chest-supported dumbbell row"]),
+      G("gf5","Pallof press",3,10,12,1,5,[],[],["Cable woodchop"]),
+      G("gf6","Cable face pull",2,12,15,0,5,[],[],["Band face pull"])
+    ],st:[T("Couch/quad stretch","45s/side"),T("Hamstring stretch","45s/side"),T("Chest/shoulder stretch","45s/side")]}
   ]};
 }
 var MIN_EX=[X("m1","Push-ups",1,10,10,"reps",0),X("m2","Squats",1,15,15,"reps",0),X("m3","Hollow hold",1,20,20,"sec",0),X("m4","Side plank",1,20,20,"sec",1)];
@@ -340,13 +375,16 @@ function normalizeProgram(p){
         x.other=(x.subs||[]).filter(function(n){return x.easier.indexOf(n)<0&&x.harder.indexOf(n)<0;});}
       x.easier=x.easier||[];x.harder=x.harder||[];x.other=x.other||[];delete x.subs;
     });});
+  if(!Array.isArray(p.gtpl))p.gtpl=def.gtpl;
+  p.gtpl.forEach(function(t){t.ex=t.ex||[];t.st=t.st||[];t.load=t.load||{};t.kind=t.kind||"strength";
+    t.ex.forEach(function(x){x.easier=x.easier||[];x.harder=x.harder||[];x.other=x.other||[];x.unit="reps";if(typeof x.inc!=="number")x.inc=5;});});
   return p;
 }
 /* versions of an exercise, easiest to hardest, with the main one in the middle */
 function ladder(x){return (x.easier||[]).slice().reverse().concat([x.name],x.harder||[]);}
 function allNames(x){var out=[];ladder(x).concat(x.other||[]).forEach(function(n){if(n&&out.indexOf(n)<0)out.push(n);});return out;}
 function steps(x,cur){var L=ladder(x),i=L.indexOf(cur);if(i<0)return {up:null,down:null};return {up:L[i+1]||null,down:L[i-1]||null};}
-function stepsByName(name){var ts=S.program.tpl;for(var i=0;i<ts.length;i++)for(var j=0;j<ts[i].ex.length;j++){var x=ts[i].ex[j];if(ladder(x).indexOf(name)>=0)return steps(x,name);}return {up:null,down:null};}
+function stepsByName(name){var ts=S.program.tpl.concat(S.program.gtpl||[]);for(var i=0;i<ts.length;i++)for(var j=0;j<ts[i].ex.length;j++){var x=ts[i].ex[j];if(ladder(x).indexOf(name)>=0)return steps(x,name);}return {up:null,down:null};}
 /* live advice from the numbers entered for one exercise */
 function feedback(x,rec){
   var cur=(rec&&rec.name)||x.name,st=steps(x,cur),sec=x.unit==="sec",u=sec?" s":"";
@@ -361,7 +399,11 @@ function feedback(x,rec){
   return null;
 }
 function fbHtml(id,f){return '<div class="fb'+(f?" "+f.k:"")+'" id="fb-'+id+'"'+(f?"":" hidden")+'>'+(f?esc(f.t):"")+'</div>';}
-function tplById(id){var a=S.program.tpl;for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i];return null;}
+function tplById(id){var a=S.program.tpl.concat(S.program.gtpl||[]);for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i];return null;}
+function gtplById(id){var a=S.program.gtpl||[];for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i];return null;}
+function isGymTpl(id){return !!gtplById(id);}
+function gymEx(id){var a=S.program.gtpl||[];for(var i=0;i<a.length;i++)for(var j=0;j<a[i].ex.length;j++)if(a[i].ex[j].id===id)return a[i].ex[j];return null;}
+function gymExByName(n){var a=S.program.gtpl||[];for(var i=0;i<a.length;i++)for(var j=0;j<a[i].ex.length;j++)if(ladder(a[i].ex[j]).indexOf(n)>=0)return a[i].ex[j];return null;}
 function tplOfEntry(e){
   if(!e)return null;var t=tplById(e.tpl);if(t)return t;
   var ids=Object.keys(e.ex||{});if(!ids.length)return null;
@@ -376,7 +418,8 @@ function stretchList(d,e){
   var type=(e&&e.type)||"home",seen={},out=[];
   function add(list,g){(list||[]).forEach(function(s){var k=s.name.trim().toLowerCase();if(!k||seen[k])return;seen[k]=1;out.push({name:s.name,amt:s.amt,g:g});});}
   add(S.program.daily,"daily");
-  var t=(type==="home"||(e&&e.alsoHome))&&!(e&&e.min)?curTpl(d,e):recoveryTpl();
+  var gt=type==="gym"&&e&&gtplById(e.gtpl);
+  var t=gt?gt:(type==="home"||(e&&e.alsoHome))&&!(e&&e.min)?curTpl(d,e):recoveryTpl();
   add(t.st,"day");
   if(type==="climb")add(CLIMB_EXTRA,"day");
   return out;
@@ -420,7 +463,7 @@ function dayLoad(e){
   function add(o,m){for(var g in o)L[g]=(L[g]||0)+o[g]*(m||1);}
   if(!e)return {L:L,hard:false,active:false};
   if(e.type==="climb"){add(LOAD.climb);hard=true;active=true;}
-  if(gymDone(e)){add(LOAD.gym);hard=true;active=true;}
+  if(gymDone(e)){var gt=gtplById(e.gtpl);add(gt?gt.load:LOAD.gym);hard=true;active=true;}
   if((e.type==="home"||e.alsoHome)&&homeDone(e)){
     active=true;
     if(e.min&&!anySets(e.ex))add({core:.5});
@@ -456,11 +499,30 @@ function suggest(d){
   if(tired&&best.t.kind!=="strength")reason=hardStreak>=3?hardStreak+" hard days in a row. Go easy today.":actStreak+" active days in a row. Go easy today.";
   else{
     var parts=[],top=topGroup(y.L);
-    if(top&&!((best.t.load[top]||0)>=2))parts.push("Yesterday worked your "+GROUP[top]+", so this trains something else.");
+    if(e1&&e1.type==="climb"&&!((best.t.load.pull||0)>=2))parts.push("You climbed yesterday, so this skips heavy pulling.");
+    else if(top&&!((best.t.load[top]||0)>=2))parts.push("Yesterday worked your "+GROUP[top]+", so this trains something else.");
     if(best.ds==null)parts.push("You haven't done this one yet.");
     else if(best.ds>=3)parts.push("Last done "+best.ds+" days ago.");
     if(!parts.length)parts.push("Next up in your rotation.");
     reason=parts.join(" ");
+  }
+  // gym
+  var yG=e1&&gymDone(e1)?e1.gtpl:null,gBest=null;
+  (S.program.gtpl||[]).forEach(function(t){
+    var cost=0;for(var k in t.load)cost+=(F[k]||0)*t.load[k];
+    var ds=daysSince(function(e){return gymDone(e)&&e.gtpl===t.id;},d,30);
+    var rec=ds==null?8:Math.min(ds,8);
+    var score=cost*1.5-rec+(yG===t.id?10:0);
+    if(!gBest||score<gBest.score)gBest={t:t,score:score,ds:ds};
+  });
+  var gym=null;
+  if(gBest){
+    var gp=[],gtop=topGroup(y.L);
+    if(e1&&e1.type==="climb"&&!((gBest.t.load.pull||0)>=2))gp.push("You climbed yesterday, so this skips pulling and grip.");
+    else if(gtop&&!((gBest.t.load[gtop]||0)>=2))gp.push("Yesterday worked your "+GROUP[gtop]+", so this trains something else.");
+    if(gBest.ds==null)gp.push("You haven't done this one yet.");else if(gBest.ds>=3)gp.push("Last done "+gBest.ds+" days ago.");
+    if(!gp.length)gp.push("Next up in your gym rotation.");
+    gym={t:gBest.t,s:tired?"easy":"good",r:(tired?"You've had a run of hard days, so only go if you feel fresh. ":"")+gp.join(" ")};
   }
   // climbing
   var dc=daysSince(function(e){return e.type==="climb";},d,30),climb;
@@ -475,7 +537,7 @@ function suggest(d){
   else if(ranY)run={s:"easy",t:"Short easy run if anything",r:"You ran yesterday. A day off between runs helps your shins."};
   else run={s:"good",t:"Good day for an easy run",r:runs?runs+" run"+(runs>1?"s":"")+" so far this week.":"No runs yet this week."};
   var rest=actStreak>=6?actStreak+" active days in a row. Consider a rest or mobility day.":null;
-  SC[d]={t:best.t,reason:reason,climb:climb,run:run,rest:rest};
+  SC[d]={t:best.t,reason:reason,gym:gym,climb:climb,run:run,rest:rest};
   return SC[d];
 }
 
@@ -557,6 +619,8 @@ function suggCard(d,e){
   var h='<section class="card sugg" aria-label="Suggestions"><div class="card-head"><h2>Suggested '+(d===todayKey()?"for today":"for this day")+'</h2></div>';
   if(sg.rest)h+='<div class="banner">'+esc(sg.rest)+'</div>';
   h+='<div class="srow"><i class="sdot good"></i><div class="stext"><b>Home: '+esc(sg.t.title)+'</b><span>'+esc(sg.reason)+'</span></div><button class="use" data-act="use-tpl" aria-pressed="'+chosenTpl+'">'+(chosenTpl?"Chosen":"Use this")+'</button></div>';
+  if(sg.gym){var gChosen=type==="gym"&&e&&e.gtpl===sg.gym.t.id;
+    h+='<div class="srow"><i class="sdot '+sg.gym.s+'"></i><div class="stext"><b>Gym: '+esc(sg.gym.t.title)+'</b><span>'+esc(sg.gym.r)+'</span></div><button class="use" data-act="use-gym" aria-pressed="'+gChosen+'">'+(gChosen?"Chosen":"Use this")+'</button></div>';}
   h+='<div class="srow"><i class="sdot '+sg.climb.s+'"></i><div class="stext"><b>'+esc(sg.climb.t)+'</b><span>'+esc(sg.climb.r)+'</span></div>'+(sg.climb.s!=="no"?'<button class="use" data-act="type" data-v="climb" aria-pressed="'+(type==="climb")+'">'+(type==="climb"?"Climbing":"Climb")+'</button>':"<span></span>")+'</div>';
   h+='<div class="srow"><i class="sdot '+sg.run.s+'"></i><div class="stext"><b>'+esc(sg.run.t)+'</b><span>'+esc(sg.run.r)+'</span></div><span></span></div>';
   return h+'</section>';
@@ -589,23 +653,76 @@ function homeCard(d,e){
   if(list.length)h+='<p class="note">Faded numbers are last time\'s. Beat one of them. Stop before your form breaks.</p>';
   return h+'</section>';
 }
+/* ---------- gym ---------- */
+function wUnit(){return S.program.unit||"lb";}
+function incFor(x){var i=+x.inc||0;return wUnit()==="kg"?i/2:i;}
+function roundW(v){var st=wUnit()==="kg"?2.5:5;return Math.max(0,Math.round(v/st)*st);}
+function gHas(g){return (g.sets||[]).some(function(s){return s&&(filled(s.w)||filled(s.r));});}
+function newSets(n){var a=[];for(var i=0;i<n;i++)a.push({w:"",r:""});return a;}
+function loadGym(e,t){
+  var keep=(e.gym||[]).filter(gHas);
+  if(t){keep=keep.concat(t.ex.filter(function(x){return !keep.some(function(k){return k.ref===x.id;});}).map(function(x){return {name:x.name,ref:x.id,sets:newSets(x.sets)};}));e.gtpl=t.id;}
+  else e.gtpl="";
+  e.gym=keep;
+}
+function topW(sets){var w=null;(sets||[]).forEach(function(s){if(s&&filled(s.w)&&(w===null||+s.w>w))w=+s.w;});return w;}
+/* what to do with the weight, based on the sets logged */
+function gymFeedback(x,g){
+  if(!x)return null;
+  var cur=g.name||x.name,st=steps(x,cur),u=wUnit(),inc=incFor(x);
+  var rs=(g.sets||[]).slice(0,x.sets).filter(function(s){return s&&filled(s.r);});if(!rs.length)return null;
+  var reps=rs.map(function(s){return +s.r;}),w=topW(rs),done=rs.length>=x.sets,avg=reps.reduce(function(a,b){return a+b;},0)/reps.length;
+  var weighted=w!==null&&w>0;
+  if(done&&reps.every(function(r){return r>=x.max;})){
+    if(weighted&&inc)return {k:"up",t:"Every set hit the top of the range. Go up to "+(w+inc)+" "+u+" next time."};
+    return {k:"up",t:"Every set hit the top of the range. "+(st.up?"Move to "+st.up+" next time.":inc?"Add some weight next time.":"Slow the reps down, or add a harder version under Program.")};
+  }
+  if(!done&&reps[0]>=Math.ceil(x.max*1.3))return {k:"up",t:"Too light: "+reps[0]+" reps on the first set. "+(weighted||inc?"Add weight for the rest.":st.up?"Switch to "+st.up+" for the rest.":"Slow the reps down for the rest.")};
+  if(done&&avg<x.min)return {k:"down",t:"Below the range today. "+(weighted?"Drop to about "+roundW(w*.9)+" "+u+" next time.":st.down?"Try "+st.down+" next time.":"Aim for one more rep next time.")};
+  if(!done&&reps[0]<Math.max(1,Math.floor(x.min*.6)))return {k:"down",t:"Too heavy for the range. "+(weighted?"Drop the weight for the rest.":st.down?"Switch to "+st.down+" for the rest.":"Shorter sets with clean form are fine.")};
+  if(done)return {k:"ok",t:"In range. Same weight next time and add a rep."};
+  return null;
+}
+function gymPlan(x,last){
+  /* suggested weight for next time, from the last session */
+  if(!x||!last)return null;var w=topW(last.sets),reps=last.sets.map(function(s){return filled(s.r)?+s.r:null;}).filter(function(r){return r!==null;});
+  if(!reps.length)return null;
+  if(reps.length>=x.sets&&reps.slice(0,x.sets).every(function(r){return r>=x.max;}))return {k:"up",w:w!==null&&incFor(x)?w+incFor(x):null};
+  if(reps.length>=x.sets&&reps.reduce(function(a,b){return a+b;},0)/reps.length<x.min)return {k:"down",w:w!==null?roundW(w*.9):null};
+  return null;
+}
 function gymCard(d,e){
-  var u=S.program.unit||"lb",list=(e&&e.gym)||[];
-  var used=Object.keys(hist().gym),opts=used.concat(GYM_SUGGEST.filter(function(n){return used.indexOf(n)<0;}));
-  var h='<section class="card"><div class="card-head"><h2>Gym session</h2><span class="label">Weight in '+esc(u)+'</span></div>';
+  var u=wUnit(),list=(e&&e.gym)||[],t=e&&gtplById(e.gtpl),sg=suggest(d);
+  var tplNames=[];(S.program.gtpl||[]).forEach(function(tt){tt.ex.forEach(function(x){allNames(x).forEach(function(n){if(tplNames.indexOf(n)<0)tplNames.push(n);});});});
+  var used=Object.keys(hist().gym),opts=used.concat(tplNames,GYM_SUGGEST).filter(function(n,i,a){return a.indexOf(n)===i;});
+  var h='<section class="card"><div class="card-head"><h2>'+esc(t?t.title:"Gym session")+'</h2><span class="label">Weight in '+esc(u)+'</span></div>';
+  h+='<div class="tplsel"><label class="label" for="gtplpick">Workout</label><select id="gtplpick" class="inp" data-ch="gtpl">'+(S.program.gtpl||[]).map(function(tt){return '<option value="'+esc(tt.id)+'"'+(t&&tt.id===t.id?" selected":"")+'>'+esc(tt.title)+(sg.gym&&tt.id===sg.gym.t.id?" (suggested)":"")+'</option>';}).join("")+'<option value=""'+(t?"":" selected")+'>Blank session</option></select></div>';
+  if(t&&t.warm)h+='<div class="warm"><b>Warm-up</b> · '+esc(t.warm)+'</div>';
+  if(t&&t.note)h+='<p class="note">'+esc(t.note)+'</p>';
   h+='<datalist id="gym-names">'+opts.map(function(n){return '<option value="'+esc(n)+'">';}).join("")+'</datalist>';
-  if(!list.length)h+='<p class="empty">Add the first exercise you did. Leave weight blank for bodyweight moves like pull-ups.</p>';
+  if(!list.length)h+='<p class="empty">'+(t?"Every exercise was removed. Pick the workout again or add one below.":"Add the first exercise you did. Leave weight blank for bodyweight moves like pull-ups.")+'</p>';
   list.forEach(function(g,i){
-    var last=lastGym(g.name,d);
-    h+='<div class="gym-ex"><div class="ex-head" style="align-items:center"><input class="inp" list="gym-names" data-in="gname" data-i="'+i+'" value="'+esc(g.name)+'" placeholder="Exercise name" aria-label="Exercise name"><button class="del" data-act="gdel" data-i="'+i+'" aria-label="Remove exercise">×</button></div>';
-    h+='<div class="last" id="gh-'+i+'">'+(last?"Last time ("+fmtShort(last.d)+"): "+esc(gymText(last.sets)):(g.name?"First time logging this.":""))+'</div><div class="gym-sets">';
+    var x=g.ref?gymEx(g.ref):null,last=lastGym(g.name,d),plan=gymPlan(x,last),nameHtml;
+    if(x){var names=allNames(x);if(names.indexOf(g.name)<0)names.push(g.name);
+      var tag=function(n){return n===x.name?"":(x.easier||[]).indexOf(n)>=0?" (easier)":(x.harder||[]).indexOf(n)>=0?" (harder)":" (swap)";};
+      nameHtml='<div class="ex-name">'+(names.length>1?'<select data-ch="gsub" data-i="'+i+'" aria-label="Exercise version">'+names.map(function(n){return '<option value="'+esc(n)+'"'+(n===g.name?" selected":"")+'>'+esc(n)+tag(n)+'</option>';}).join("")+'</select>':esc(g.name))+'</div><div class="tgt num">'+tgtText(x)+'</div><button class="del" data-act="gdel" data-i="'+i+'" aria-label="Remove exercise">×</button>';
+    } else nameHtml='<input class="inp" list="gym-names" data-in="gname" data-i="'+i+'" value="'+esc(g.name)+'" placeholder="Exercise name" aria-label="Exercise name"><button class="del" data-act="gdel" data-i="'+i+'" aria-label="Remove exercise">×</button>';
+    h+='<div class="gym-ex"><div class="ex-head" style="align-items:center">'+nameHtml+'</div>';
+    if(plan&&plan.k==="up")h+='<span class="chip">Hit the top of the range last time.'+(plan.w!=null?" Try "+esc(plan.w)+" "+esc(u)+".":"")+'</span>';
+    if(plan&&plan.k==="down")h+='<span class="chip low">Below the range last time.'+(plan.w!=null?" Try "+esc(plan.w)+" "+esc(u)+".":"")+'</span>';
+    h+='<div class="gym-sets">';
     (g.sets||[]).forEach(function(s,j){
-      var ls=last&&last.sets[j];
-      h+='<div class="gset"><span class="ix">'+(j+1)+'</span><input class="inp" type="number" inputmode="decimal" min="0" step="any" data-in="gset" data-f="w" data-i="'+i+'" data-j="'+j+'" value="'+(filled(s.w)?esc(s.w):"")+'" placeholder="'+(ls&&filled(ls.w)?esc(ls.w):esc(u))+'" aria-label="Set '+(j+1)+' weight"><span class="x">×</span><input class="inp" type="number" inputmode="numeric" min="0" step="1" data-in="gset" data-f="r" data-i="'+i+'" data-j="'+j+'" value="'+(filled(s.r)?esc(s.r):"")+'" placeholder="'+(ls&&filled(ls.r)?esc(ls.r):"reps")+'" aria-label="Set '+(j+1)+' reps"><button class="del" data-act="gdelset" data-i="'+i+'" data-j="'+j+'" aria-label="Remove set">×</button></div>';
+      var ls=last&&last.sets[j],wph=plan&&plan.w!=null?plan.w:(ls&&filled(ls.w)?ls.w:u);
+      h+='<div class="gset"><span class="ix">'+(j+1)+'</span><input class="inp" type="number" inputmode="decimal" min="0" step="any" data-in="gset" data-f="w" data-i="'+i+'" data-j="'+j+'" value="'+(filled(s.w)?esc(s.w):"")+'" placeholder="'+esc(wph)+'" aria-label="Set '+(j+1)+' weight"><span class="x">×</span><input class="inp" type="number" inputmode="numeric" min="0" step="1" data-in="gset" data-f="r" data-i="'+i+'" data-j="'+j+'" value="'+(filled(s.r)?esc(s.r):"")+'" placeholder="'+(ls&&filled(ls.r)?esc(ls.r):"reps")+'" aria-label="Set '+(j+1)+' reps"><button class="del" data-act="gdelset" data-i="'+i+'" data-j="'+j+'" aria-label="Remove set">×</button></div>';
     });
-    h+='</div><button class="small-btn" data-act="gaddset" data-i="'+i+'">+ Add set</button></div>';
+    h+='</div>';
+    if(x){var f=gymFeedback(x,g);h+='<div class="fb'+(f?" "+f.k:"")+'" id="gfb-'+i+'"'+(f?"":" hidden")+'>'+(f?esc(f.t):"")+'</div>';}
+    h+='<div class="last" id="gh-'+i+'">'+(last?"Last time ("+fmtShort(last.d)+"): "+esc(gymText(last.sets)):(g.name?"First time logging this.":""))+'</div>';
+    h+='<button class="small-btn" data-act="gaddset" data-i="'+i+'">+ Add set</button></div>';
   });
-  return h+'<button class="primary" data-act="gadd">+ Add exercise</button></section>';
+  h+='<button class="primary" data-act="gadd">+ Add exercise</button>';
+  if(list.length)h+='<p class="note">Leave weight blank for bodyweight. Faded numbers are last time\'s, or the suggested next weight.</p>';
+  return h+'</section>';
 }
 function climbCard(d,e){
   var c=(e&&e.climb)||{};
@@ -692,9 +809,10 @@ function viewProgress(){
   var home=Object.keys(H.home).map(function(n){var a=H.home[n];return {n:n,a:a,last:a[a.length-1]};}).sort(function(x,y){return x.last.d<y.last.d?1:-1;});
   var gym=Object.keys(H.gym).map(function(n){var a=H.gym[n];return {n:n,a:a,last:a[a.length-1]};}).sort(function(x,y){return x.last.d<y.last.d?1:-1;});
   var ready=home.filter(function(r){return meetsTop(r.last);});
+  var gready=gym.map(function(r){var x=gymExByName(r.n),pl=gymPlan(x,r.last);return pl&&pl.k==="up"?{n:r.n,last:r.last,pl:pl}:null;}).filter(Boolean);
   var h='<h1 style="font-size:30px">Progress</h1>';
-  h+='<section class="card"><div class="card-head"><h2>Ready to level up</h2><span class="label num">'+ready.length+'</span></div>';
-  h+=ready.length?ready.map(function(r){return '<div class="prow"><div class="pn">'+esc(r.n)+'</div><div class="pl">Hit '+esc(setsText(r.last.sets))+(r.last.unit==="sec"?" s":"")+' on '+fmtShort(r.last.d)+'. '+esc((function(u){return u?"Next: "+u+".":"Slow the tempo or add a harder version under Program.";})(stepsByName(r.n).up))+'</div></div>';}).join(""):'<p class="empty">When you hit the top of the range on every set, the exercise shows up here.</p>';
+  h+='<section class="card"><div class="card-head"><h2>Ready to level up</h2><span class="label num">'+(ready.length+gready.length)+'</span></div>';
+  h+=ready.map(function(r){return '<div class="prow"><div class="pn">'+esc(r.n)+'</div><div class="pl">Hit '+esc(setsText(r.last.sets))+(r.last.unit==="sec"?" s":"")+' on '+fmtShort(r.last.d)+'. '+esc((function(u){return u?"Next: "+u+".":"Slow the tempo or add a harder version under Program.";})(stepsByName(r.n).up))+'</div></div>';}).join("")+gready.map(function(r){return '<div class="prow"><div class="pn">'+esc(r.n)+'</div><div class="pl">Hit the top of the range on '+fmtShort(r.last.d)+'. '+esc(r.pl.w!=null?"Next: "+r.pl.w+" "+wUnit()+".":"Add some weight next time.")+'</div></div>';}).join("")+(ready.length||gready.length?"":'<p class="empty">When you hit the top of the range on every set, the exercise shows up here.</p>');
   h+='</section><section class="card"><div class="card-head"><h2>Calisthenics</h2><span class="label">Best set per session</span></div>';
   h+=home.length?home.map(function(r){var vals=r.a.slice(-12).map(function(s){return Math.max.apply(null,s.sets.filter(filled).map(Number));});
     return '<div class="prow"><div class="pn">'+esc(r.n)+'</div>'+spark(vals)+'<div class="pl num">'+fmtShort(r.last.d)+': '+esc(setsText(r.last.sets))+(r.last.unit==="sec"?" s":"")+' · '+r.a.length+' session'+(r.a.length===1?"":"s")+'</div></div>';}).join(""):'<p class="empty">Log your first home workout and each exercise will get a trend line here.</p>';
@@ -710,12 +828,14 @@ function stretchRows(list){
 function viewProgram(){
   var sel=S.progTpl;if(sel!=="daily"&&!tplById(sel))sel=S.progTpl="daily";
   var h='<h1 style="font-size:30px">Program</h1><p class="note">Edits save automatically and apply from now on. Past logs keep what you did.</p>';
-  h+='<div class="tplchips" role="group" aria-label="What to edit"><button data-act="ptpl" data-v="daily" aria-pressed="'+(sel==="daily")+'">Every day</button>'+S.program.tpl.map(function(t){return '<button data-act="ptpl" data-v="'+esc(t.id)+'" aria-pressed="'+(t.id===sel)+'">'+esc(t.title)+'</button>';}).join("")+'</div>';
+  var chip=function(t){return '<button data-act="ptpl" data-v="'+esc(t.id)+'" aria-pressed="'+(t.id===sel)+'">'+esc(t.title)+'</button>';};
+  h+='<div class="label">Home</div><div class="tplchips" role="group" aria-label="Home workouts"><button data-act="ptpl" data-v="daily" aria-pressed="'+(sel==="daily")+'">Every day</button>'+S.program.tpl.map(chip).join("")+'</div>';
+  h+='<div class="label">Gym</div><div class="tplchips" role="group" aria-label="Gym workouts">'+(S.program.gtpl||[]).map(chip).join("")+'</div>';
   h+='<fieldset'+(S.loaded?"":" disabled")+'>';
   if(sel==="daily"){
     h+='<section class="card"><div class="card-head"><h2>Every-day essentials</h2><span class="label num">'+S.program.daily.length+'</span></div><p class="note">These show at the top of the checklist every day, whatever else you do.</p>'+stretchRows(S.program.daily)+'<button class="small-btn" data-act="pst-add">+ Add item</button></section>';
   } else {
-    var p=tplById(sel);
+    var p=tplById(sel),gymT=isGymTpl(sel);
     h+='<section class="card"><div class="field"><label for="p-title">Workout name</label><input id="p-title" class="inp" data-in="ptpl" data-f="title" value="'+esc(p.title)+'"></div>';
     h+='<div class="field"><label for="p-warm">Warm-up</label><input id="p-warm" class="inp" data-in="ptpl" data-f="warm" value="'+esc(p.warm||"")+'"></div>';
     h+='<div class="field"><label for="p-note">Note</label><input id="p-note" class="inp" data-in="ptpl" data-f="note" value="'+esc(p.note||"")+'"></div>';
@@ -728,7 +848,8 @@ function viewProgram(){
       h+='<div class="pex-grid"><div class="field"><label for="ps-'+id+'">Sets</label><input id="ps-'+id+'" class="inp num" type="number" min="1" max="10" data-in="pex" data-id="'+id+'" data-f="sets" value="'+x.sets+'"></div>';
       h+='<div class="field"><label for="pmin-'+id+'">Min</label><input id="pmin-'+id+'" class="inp num" type="number" min="0" data-in="pex" data-id="'+id+'" data-f="min" value="'+x.min+'"></div>';
       h+='<div class="field"><label for="pmax-'+id+'">Max</label><input id="pmax-'+id+'" class="inp num" type="number" min="0" data-in="pex" data-id="'+id+'" data-f="max" value="'+x.max+'"></div>';
-      h+='<div class="field unit"><label for="pu-'+id+'">Measured in</label><select id="pu-'+id+'" class="inp" data-ch="pex-unit" data-id="'+id+'"><option value="reps"'+(x.unit==="reps"?" selected":"")+'>Reps</option><option value="sec"'+(x.unit==="sec"?" selected":"")+'>Seconds</option></select></div></div>';
+      if(gymT)h+='<div class="field unit"><label for="pi-'+id+'">Weight jump ('+esc(wUnit())+')</label><input id="pi-'+id+'" class="inp num" type="number" min="0" step="any" data-in="pex" data-id="'+id+'" data-f="inc" value="'+incFor(x)+'"></div></div>';
+      else h+='<div class="field unit"><label for="pu-'+id+'">Measured in</label><select id="pu-'+id+'" class="inp" data-ch="pex-unit" data-id="'+id+'"><option value="reps"'+(x.unit==="reps"?" selected":"")+'>Reps</option><option value="sec"'+(x.unit==="sec"?" selected":"")+'>Seconds</option></select></div></div>';
       h+='<div class="field"><label for="pe-'+id+'">Easier versions, closest first (comma separated)</label><input id="pe-'+id+'" class="inp" data-in="pex" data-id="'+id+'" data-f="easier" value="'+esc((x.easier||[]).join(", "))+'" placeholder="e.g. Incline push-ups"></div>';
       h+='<div class="field"><label for="ph-'+id+'">Harder versions, next step first</label><input id="ph-'+id+'" class="inp" data-in="pex" data-id="'+id+'" data-f="harder" value="'+esc((x.harder||[]).join(", "))+'" placeholder="e.g. Archer push-ups"></div>';
       h+='<div class="field"><label for="po-'+id+'">Other swaps</label><input id="po-'+id+'" class="inp" data-in="pex" data-id="'+id+'" data-f="other" value="'+esc((x.other||[]).join(", "))+'" placeholder="Same difficulty, different movement"></div>';
@@ -771,7 +892,8 @@ root.addEventListener("click",function(ev){
     case "next":S.date=addDays(d,1);break;
     case "today":S.date=todayKey();break;
     case "goto":S.date=b.dataset.d;if(S.tab!=="today"){S.tab="today";render();window.scrollTo(0,0);return;}break;
-    case "type":e=ensureEntry(d);e.type=b.dataset.v;touch(d);break;
+    case "type":e=ensureEntry(d);e.type=b.dataset.v;if(e.type==="gym"&&e.gtpl===undefined&&!(e.gym||[]).some(gHas)){var sgg=suggest(d).gym;loadGym(e,sgg?sgg.t:null);}touch(d);break;
+    case "use-gym":var sgy=suggest(d).gym;if(!sgy)return;e=ensureEntry(d);e.type="gym";if(e.gtpl!==sgy.t.id)loadGym(e,sgy.t);touch(d);break;
     case "sess-start":e=ensureEntry(d);e.sess={start:Date.now()};touch(d);break;
     case "sess-finish":e=ensureEntry(d);e.sess=e.sess||{};e.sess.end=Date.now();
       e.sess.min=e.sess.start?Math.max(1,Math.round((e.sess.end-e.sess.start)/60000)):null;
@@ -786,7 +908,7 @@ root.addEventListener("click",function(ev){
     case "gdelset":e=ensureEntry(d);e.gym[+b.dataset.i].sets.splice(+b.dataset.j,1);touch(d);break;
     case "cal-prev":case "cal-next":var f=parse(S.calMonth+"-01");f.setMonth(f.getMonth()+(a==="cal-prev"?-1:1));S.calMonth=key(f).slice(0,7);break;
     case "ptpl":S.progTpl=b.dataset.v;S.confirmReset=false;break;
-    case "pex-add":tplById(S.progTpl).ex.push(X("x"+Date.now().toString(36),"New exercise",3,8,12,"reps",0));persist("program");render();var ni=root.querySelectorAll('[data-in="pex"][data-f="name"]');if(ni.length){ni[ni.length-1].focus();ni[ni.length-1].select();}return;
+    case "pex-add":tplById(S.progTpl).ex.push(isGymTpl(S.progTpl)?G("x"+Date.now().toString(36),"New exercise",3,8,12,0,5):X("x"+Date.now().toString(36),"New exercise",3,8,12,"reps",0));persist("program");render();var ni=root.querySelectorAll('[data-in="pex"][data-f="name"]');if(ni.length){ni[ni.length-1].focus();ni[ni.length-1].select();}return;
     case "pex-del":case "pex-up":case "pex-down":var r=exById(b.dataset.id);if(!r)return;
       if(a==="pex-del")r.p.ex.splice(r.i,1);else{var j=r.i+(a==="pex-up"?-1:1);if(j<0||j>=r.p.ex.length)return;var tmp=r.p.ex[j];r.p.ex[j]=r.x;r.p.ex[r.i]=tmp;}
       persist("program");break;
@@ -807,6 +929,8 @@ root.addEventListener("change",function(ev){
     case "min":e=ensureEntry(d);e.min=t.checked;touch(d);break;
     case "also":e=ensureEntry(d);e.alsoHome=t.checked;touch(d);break;
     case "tpl":e=ensureEntry(d);e.tpl=t.value;touch(d);break;
+    case "gtpl":e=ensureEntry(d);loadGym(e,gtplById(t.value));touch(d);break;
+    case "gsub":e=ensureEntry(d);e.gym[+t.dataset.i].name=t.value;touch(d);break;
     case "st":e=ensureEntry(d);e.st=e.st||{};e.st[t.dataset.name]=t.checked;touch(d);break;
     case "sub":e=ensureEntry(d);var x=planEx(d,t.dataset.ex,t.dataset.mode);if(!x)return;recFor(d,e,x,t.dataset.mode).name=t.value;touch(d);break;
     case "pex-unit":var r=exById(t.dataset.id);if(r){r.x.unit=t.value;persist("program");}return;
@@ -826,11 +950,14 @@ root.addEventListener("input",function(ev){
     case "climb":e=ensureEntry(d);e.climb=e.climb||{};var f=t.dataset.f;e.climb[f]=f==="min"?(t.value===""?null:Number(t.value)):t.value;touch(d);break;
     case "gname":e=ensureEntry(d);var gi=+t.dataset.i;e.gym[gi].name=t.value;touch(d);
       var hint=document.getElementById("gh-"+gi);if(hint){var l=lastGym(t.value,d);hint.textContent=l?"Last time ("+fmtShort(l.d)+"): "+gymText(l.sets):(t.value?"First time logging this.":"");}break;
-    case "gset":e=ensureEntry(d);var s=e.gym[+t.dataset.i].sets[+t.dataset.j];s[t.dataset.f]=t.value===""?"":Number(t.value);autoStart(d,e);touch(d);break;
+    case "gset":e=ensureEntry(d);var gg=e.gym[+t.dataset.i],s=gg.sets[+t.dataset.j];s[t.dataset.f]=t.value===""?"":Number(t.value);autoStart(d,e);touch(d);
+      var gfb=document.getElementById("gfb-"+t.dataset.i);if(gfb){var gf=gymFeedback(gg.ref?gymEx(gg.ref):null,gg);gfb.className="fb"+(gf?" "+gf.k:"");gfb.textContent=gf?gf.t:"";gfb.hidden=!gf;}
+      break;
     case "ptpl":tplById(S.progTpl)[t.dataset.f]=t.value;persist("program");break;
     case "pex":var pr=exById(t.dataset.id);if(!pr)return;var pf=t.dataset.f;
       if(pf==="easier"||pf==="harder"||pf==="other")pr.x[pf]=t.value.split(",").map(function(s){return s.trim();}).filter(Boolean);
       else if(pf==="name")pr.x.name=t.value;
+      else if(pf==="inc"){var iv=parseFloat(t.value);if(isNaN(iv))return;pr.x.inc=Math.max(0,wUnit()==="kg"?iv*2:iv);}
       else{var n=parseInt(t.value,10);if(isNaN(n))return;if(pf==="sets")n=Math.max(1,Math.min(10,n));pr.x[pf]=Math.max(0,n);}
       persist("program");break;
     case "pst":editList()[+t.dataset.i][t.dataset.f]=t.value;persist("program");break;
@@ -838,7 +965,7 @@ root.addEventListener("input",function(ev){
 });
 
 /* test hook for offline checks; harmless in the page */
-window.__cali={S:S,render:render,feedback:function(x,r){return feedback(x,r);},suggest:function(d){SC={};HC=null;return suggest(d);}};
+window.__cali={S:S,render:render,gymFeedback:function(x,g){return gymFeedback(x,g);},gymEx:function(i){return gymEx(i);},normalize:function(p){return normalizeProgram(p);},feedback:function(x,r){return feedback(x,r);},suggest:function(d){SC={};HC=null;return suggest(d);}};
 
 render();
 initStore();
