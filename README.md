@@ -1,5 +1,7 @@
 # Hybrid Athletics
 
+**Try it:** [tsheehan11.github.io/hybrid-athletics](https://tsheehan11.github.io/hybrid-athletics/)
+
 A phone-first training tracker for people who do more than one kind of training. It covers bodyweight work at home, gym sessions and up to ten sports (climbing, running, cycling, swimming, field, court, racket, hockey, martial arts, skiing). Fatigue is shared across all of them, so a hard climbing day changes what it suggests in the gym the next day, and the reverse.
 
 It started as *Cali & Climb Log*, a calisthenics + climbing log for one person. It is now a general multi-sport planner with a setup wizard, adaptive scheduling and on-device learning.
@@ -353,3 +355,7 @@ Ship only what beats the baseline. Keep the "What it has learned" card honest by
 ## Running it
 
 It's one static file with no build step. Open `index.html` in a browser, or turn on GitHub Pages for this repo (Settings → Pages → deploy from `main`, root). Outside the Claude artifact, data stays in that browser's `localStorage`. Use **Back up** under **Your data** on the program page to move it between devices.
+
+## License
+
+[MIT](LICENSE). Use it, fork it, build on it.
