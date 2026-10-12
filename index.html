@@ -67,6 +67,7 @@ h1,h2,h3{margin:0;font-family:var(--display);font-weight:700;letter-spacing:.01e
 .mk.run{background:transparent;box-shadow:inset 0 0 0 2px var(--run)}
 .mk.sport{background:var(--sport);border-radius:1px;width:7px;height:7px;transform:rotate(45deg)}
 .mk.st{width:9px;height:3px;border-radius:2px;background:var(--ink);opacity:.6}
+.mk.st.part{width:5px;opacity:.3}
 
 /* suggestion */
 .sugg{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
@@ -1492,7 +1493,14 @@ function dayKind(e){
   if(e.type==="rest")return "rest";
   return null;
 }
-function stretched(e){if(!e||!e.st)return false;for(var k in e.st)if(e.st[k])return true;return false;}
+/* checklist state for a day: 0 nothing ticked, 1 partly done, 2 every item ticked */
+function ckState(e,d){
+  if(!e||!e.st)return 0;var tk=0;for(var k in e.st)if(e.st[k])tk++;if(!tk)return 0;
+  var list=stretchList(d,e);if(!list.length)return 1;
+  var n=list.filter(function(s){return e.st[s.name];}).length;
+  return n>=list.length||tk>=list.length?2:1;
+}
+function stretched(e,d){return ckState(e,d)===2;}
 
 /* ---------- suggestions ---------- */
 function dayLoad(e){
@@ -2087,11 +2095,11 @@ function initStore(){
 }
 
 /* ---------- views ---------- */
-function marks(e){var a=activities(e);if(!a.length&&e&&e.type==="rest")a=["rest"];return '<span class="marks">'+a.slice(0,3).map(function(id){return '<i class="mk '+mkClass(id)+'"></i>';}).join("")+(stretched(e)?'<i class="mk st"></i>':"")+'</span>';}
+function marks(e,d){var a=activities(e),c=ckState(e,d);if(!a.length&&e&&e.type==="rest")a=["rest"];return '<span class="marks">'+a.slice(0,3).map(function(id){return '<i class="mk '+mkClass(id)+'"></i>';}).join("")+(c===2?'<i class="mk st"></i>':c===1?'<i class="mk st part"></i>':"")+'</span>';}
 function weekStrip(){
   var mon=mondayOf(S.date),t=todayKey(),h="";
   for(var i=0;i<7;i++){var d=addDays(mon,i),e=getEntry(d);
-    h+='<button class="wd'+(d===t?" today":"")+'" data-act="goto" data-d="'+d+'"'+(d===S.date?' aria-current="date"':"")+' aria-label="'+esc(fmtLong(d))+'"><span class="dn">'+DN[dowOf(d)]+'</span><span class="dd num">'+parse(d).getDate()+'</span>'+marks(e)+'</button>';}
+    h+='<button class="wd'+(d===t?" today":"")+'" data-act="goto" data-d="'+d+'"'+(d===S.date?' aria-current="date"':"")+' aria-label="'+esc(fmtLong(d))+'"><span class="dn">'+DN[dowOf(d)]+'</span><span class="dd num">'+parse(d).getDate()+'</span>'+marks(e,d)+'</button>';}
   return '<div class="week">'+h+'</div>';
 }
 function tgtText(x){var r=x.min===x.max?String(x.max):x.min+"–"+x.max;return x.sets+" × "+r+(x.unit==="sec"?" s":"")+(x.side?" /side":"");}
@@ -2388,17 +2396,17 @@ function viewSession(){
 function viewCalendar(){
   var t=todayKey(),ym=S.calMonth,first=parse(ym+"-01"),y=first.getFullYear(),m=first.getMonth();
   var days=new Date(y,m+1,0).getDate(),lead=(first.getDay()+6)%7,i;
-  var s=0,d=t;if(!stretched(getEntry(d)))d=addDays(d,-1);while(stretched(getEntry(d))){s++;d=addDays(d,-1);}
+  var s=0,d=t;if(!stretched(getEntry(d),d))d=addDays(d,-1);while(stretched(getEntry(d),d)){s++;d=addDays(d,-1);}
   var mon=mondayOf(t),act=0,runs=0;for(i=0;i<7;i++){var e=getEntry(addDays(mon,i));var k=dayKind(e);if(k&&k!=="rest")act++;if(activities(e).some(function(a){return SPORTS[a];}))runs++;}
   var h='<div class="datebar"><button class="icon-btn" data-act="cal-prev" aria-label="Previous month">‹</button><h1>'+esc(first.toLocaleDateString("en-CA",{month:"long",year:"numeric"}))+'</h1><button class="icon-btn" data-act="cal-next" aria-label="Next month">›</button></div>';
   h+='<div class="stats"><div class="stat"><b class="num">'+s+'</b><span>day checklist streak</span></div><div class="stat"><b class="num">'+act+'</b><span>training days this week</span></div><div class="stat"><b class="num">'+runs+'</b><span>sport sessions this week</span></div></div>';
   h+='<section class="card"><div class="cal">'+["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(function(n){return '<div class="hd">'+n+'</div>';}).join("");
   for(i=0;i<lead;i++)h+='<div class="cell out" aria-hidden="true"></div>';
   for(var dd=1;dd<=days;dd++){var k2=ym+"-"+pad(dd),e2=getEntry(k2);
-    h+='<button class="cell'+(k2===t?" today":"")+(k2>t?" future":"")+'" data-act="goto" data-d="'+k2+'" aria-label="'+esc(fmtLong(k2))+'"><span class="dd num">'+dd+'</span>'+marks(e2)+'</button>';}
+    h+='<button class="cell'+(k2===t?" today":"")+(k2>t?" future":"")+'" data-act="goto" data-d="'+k2+'" aria-label="'+esc(fmtLong(k2))+'"><span class="dd num">'+dd+'</span>'+marks(e2,k2)+'</button>';}
   var lg=[];if(hasHome())lg.push(["home","Home"]);if(hasGym())lg.push(["gym","Gym"]);var anyOther=false;
   profSports().forEach(function(s){var c=mkClass(s.id);if(c==="sport"){if(!anyOther){anyOther=true;lg.push(["sport","Other sport"]);}}else lg.push([c,SPORTS[s.id].short]);});
-  lg.push(["rest","Rest"],["st","Checklist"]);
+  lg.push(["rest","Rest"],["st","Checklist done"],["st part","Checklist started"]);
   h+='</div><div class="legend">'+lg.map(function(l){return '<span><i class="mk '+l[0]+'"></i>'+esc(l[1])+'</span>';}).join("")+'</div></section>';
   return h+'<p class="note">Tap a day to see or edit what you logged.</p>';
 }
