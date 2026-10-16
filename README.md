@@ -72,12 +72,12 @@ From that it builds:
 
 | | |
 | --- | --- |
-| Delivery | A single self-contained `index.html` (about 300 KB): vanilla JS in one IIFE, no build step and no dependencies |
+| Delivery | Vanilla JS with no build step and no dependencies: `app.js` (the whole app in one IIFE, about 280 KB), `styles.css`, and a small `index.html` that loads them. The Claude artifact is the same code inlined into one file |
 | Main host | A Claude artifact (claude.ai). The same file also runs as a plain static page (GitHub Pages or opened locally) |
 | Rendering | HTML is built as strings and `render()` redraws the view. Event delegation goes through `data-act` / `data-ch` / `data-in` attributes |
 | State | `S.program` (profile, templates, week plan, settings) and `S.months` (logs). Derived caches (`HC` history, `SC` suggestions, `LC` learning, `HB` habits) are cleared whenever anything changes |
 
-### Main parts of `index.html`
+### Main parts of `app.js`
 
 | Area | Functions |
 | --- | --- |
@@ -254,7 +254,7 @@ Sport add-ons (`ADDONS`) attach at most 2 of these extras to a general workout, 
 - **Suggestion logging is too thin to evaluate.** It doesn't record the scores or alternatives at the time of a suggestion, so there's no way to measure later whether a change made suggestions better.
 - **Data stays inside each Claude account.** The artifact's database can't be queried across users, so nothing can be learned across people.
 - **The AI adjust box needs a Claude account.** View-only and GitHub Pages visitors don't get it.
-- **One 300 KB file** is hard to test and extend: the library, engine, learning and UI are all mixed together.
+- **One 280 KB script** is hard to test and extend: the library, engine, learning and UI are all mixed together in `app.js`.
 
 ---
 
@@ -337,7 +337,8 @@ Ship only what beats the baseline. Keep the "What it has learned" card honest by
 
 ### Milestones
 
-- [ ] Split `index.html` into library / engine / learning / ui modules with tests (no behaviour change)
+- [x] Move the script and styles out of `index.html` into `app.js` and `styles.css`
+- [ ] Split `app.js` into library / engine / learning / ui modules with tests (no behaviour change)
 - [ ] PWA with IndexedDB storage and backup import
 - [ ] Accounts, Postgres schema and sync
 - [ ] Suggestion event logging (context, candidates, probabilities, outcome)
@@ -354,7 +355,7 @@ Ship only what beats the baseline. Keep the "What it has learned" card honest by
 
 ## Running it
 
-It's one static file with no build step. Open `index.html` in a browser, or turn on GitHub Pages for this repo (Settings → Pages → deploy from `main`, root). Outside the Claude artifact, data stays in that browser's `localStorage`. Use **Back up** under **Your data** on the program page to move it between devices.
+It's static files with no build step. Open `index.html` in a browser, or turn on GitHub Pages for this repo (Settings → Pages → deploy from `main`, root). Outside the Claude artifact, data stays in that browser's `localStorage`. Use **Back up** under **Your data** on the program page to move it between devices.
 
 ## License
 
