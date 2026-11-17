@@ -1635,41 +1635,16 @@ function sportAdvice(s,d,e1,y){
 }
 
 /* ---------- adjust a workout with a prompt (asks Claude on the viewer's own account) ---------- */
-var SAMPLE=null,AI={q:"",busy:false,err:"",note:"",off:false,ctl:null,prop:null,opts:null},CT=null;
+var SAMPLE=null,AI={q:"",busy:false,err:"",note:"",off:false,ctl:null,prop:null,opts:null,hand:null},CT=null;
 var AI_CHIPS=["Only 20 minutes","Make it harder","Go easier today","Give me 3 options"];
-/* Outside Claude, the helper calls the Anthropic API with a key the person pastes in. The key stays in this browser. */
-var AIK_KEY="ha-ai-v1",AIK={key:"",model:"claude-sonnet-5-5"},AIKF={key:"",model:"",msg:"",err:""};
-function aikLoad(){try{var o=JSON.parse(localStorage.getItem(AIK_KEY)||"null");if(o&&o.key){AIK.key=String(o.key);AIK.model=String(o.model||AIK.model);}}catch(_){}}
-function aikSave(){try{if(AIK.key)localStorage.setItem(AIK_KEY,JSON.stringify(AIK));else localStorage.removeItem(AIK_KEY);return true;}catch(_){return false;}}
-function aiErr(code,msg){var e=new Error(msg||code);e.code=code;return e;}
+/* Outside Claude there is no API to call, so the helper hands off: it writes the request, the person
+   sends it in their own Claude app, and pastes the reply back here. */
 function parseJsonReply(txt){var t=String(txt||""),a=t.indexOf("{"),b=t.lastIndexOf("}");if(a<0||b<=a)return null;try{return JSON.parse(t.slice(a,b+1));}catch(_){return null;}}
-var OWN_AI={json:function(prompt,o){
-  return fetch("https://api.anthropic.com/v1/messages",{method:"POST",signal:o&&o.signal,headers:{"content-type":"application/json","x-api-key":AIK.key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-    body:JSON.stringify({model:AIK.model,max_tokens:3000,messages:[{role:"user",content:prompt}]})})
-  .catch(function(err){throw aiErr(err&&err.name==="AbortError"?"cancelled":"offline");})
-  .then(function(res){return res.json().catch(function(){return null;}).then(function(j){
-    if(!res.ok)throw aiErr(res.status===401||res.status===403?"bad_key":res.status===404?"bad_model":res.status===429?"rate_limited":res.status===400&&j&&j.error&&/credit|billing/i.test(j.error.message||"")?"no_credit":"upstream_error");
-    var txt=((j&&j.content)||[]).filter(function(c){return c&&c.type==="text";}).map(function(c){return c.text;}).join("");
-    var out=parseJsonReply(txt);if(!out)throw aiErr("upstream_error");return out;});});
-}};
+var HANDOFF={handoff:true};
 function inClaude(){return !!(window.claude&&typeof window.claude.use==="function");}
 function initAI(){
-  if(!inClaude()){aikLoad();SAMPLE=AIK.key?OWN_AI:null;return;}
+  if(!inClaude()){SAMPLE=HANDOFF;return;}
   window.claude.use("sample").then(function(s){if(s&&typeof s.json==="function"){SAMPLE=s;safeRender();}}).catch(function(){});
-}
-function aiKeyCard(){
-  if(inClaude())return "";
-  var h='<section class="card"><div class="card-head"><h2>Workout helper</h2></div>';
-  if(AIK.key){
-    h+='<p class="note">The helper is on. It uses your Anthropic API key ending in <b>'+esc(AIK.key.slice(-4))+'</b> and the model <b>'+esc(AIK.model)+'</b>. The key is stored on this device only and is never synced.</p>';
-    if(AIKF.msg)h+='<p class="note ok-note">'+esc(AIKF.msg)+'</p>';
-    return h+'<div class="btnrow"><button class="text-btn" data-act="aik-del">Remove key</button></div></section>';
-  }
-  h+='<p class="note">Type what you want on any workout ("only 20 minutes", "swap the pull-ups", "give me 3 options") and Claude proposes the changes. This needs your own Anthropic API key. Each request costs a few cents on that account. The key is stored on this device only.</p>';
-  h+='<div class="field"><label for="aik-key">Anthropic API key</label><input id="aik-key" class="inp" type="password" autocomplete="off" data-in="aik-key" value="'+esc(AIKF.key)+'" placeholder="sk-ant-…"></div>';
-  h+='<div class="field"><label for="aik-model">Model</label><input id="aik-model" class="inp" autocomplete="off" data-in="aik-model" value="'+esc(AIKF.model||AIK.model)+'"></div>';
-  if(AIKF.err)h+='<p class="note ai-err">'+esc(AIKF.err)+'</p>';
-  return h+'<div class="btnrow"><button class="primary" data-act="aik-save">Save key</button></div></section>';
 }
 /* workouts adjusted for a single day live on that day's log */
 function customTpls(){if(CT)return CT;CT=[];allDays().forEach(function(p){if(p[1].custom)CT.push(p[1].custom);});return CT;}
@@ -1720,12 +1695,17 @@ function aiPrompt(d,e,q){
 function aiRun(d){
   if(!SAMPLE||AI.busy||AI.off)return;var q=(AI.q||"").trim();if(!q)return;
   var e=ensureEntry(d),prompt=aiPrompt(d,e,q),ctl=new AbortController();
+  if(SAMPLE.handoff){
+    AI.err="";AI.note="";AI.prop=null;AI.opts=null;AI.hand={q:q,prompt:prompt,copied:false,reply:""};
+    try{if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(prompt).then(function(){if(AI.hand){AI.hand.copied=true;safeRender();}},function(){});}catch(_){}
+    render();return;
+  }
   AI.busy=true;AI.err="";AI.note="";AI.prop=null;AI.opts=null;AI.ctl=ctl;render();
   SAMPLE.json(prompt,{signal:ctl.signal,cache:false}).then(function(r){aiApply(d,r,q);}).catch(function(err){
     var c=(err&&err.code)||"upstream_error";
     if(c==="cancelled")return;
     if(c==="not_granted"||c==="sampling_disabled"||c==="not_declared"||c==="capability_disabled"||c==="capability_removed"){AI.off=true;AI.err=c==="not_granted"?"Adjusting needs permission to use Claude. Reload the page to be asked again.":"Adjusting with Claude isn't available on this account.";return;}
-    AI.err=c==="bad_key"?"That API key was rejected. Check it under Program, Workout helper.":c==="bad_model"?"That model name wasn't recognised. Check it under Program, Workout helper.":c==="no_credit"?"Your Anthropic account is out of credit.":c==="offline"?"Can't reach Claude. Check your connection and try again.":c==="rate_limited"?"You've hit a usage limit. Try again in a little while.":c==="session_expired"?"Sign in to Claude again, then try once more.":c==="refused"?"Claude couldn't help with that one. Try wording it differently.":"That didn't come back right. Try again.";
+    AI.err=c==="rate_limited"?"You've hit a usage limit. Try again in a little while.":c==="session_expired"?"Sign in to Claude again, then try once more.":c==="refused"?"Claude couldn't help with that one. Try wording it differently.":"That didn't come back right. Try again.";
   }).then(function(){if(AI.ctl===ctl){AI.busy=false;AI.ctl=null;}render();});
 }
 function aiGym(e){return S.view==="session"?S.act==="gym":!!e&&e.type==="gym";}
@@ -1859,11 +1839,19 @@ function aiBox(d,e){
   if(mine)h+='<div class="warm"><b>Changed for today</b>'+(c.req?' · "'+esc(c.req)+'"':'')+'</div><div class="btnrow"><button class="text-btn" data-act="ai-undo">Back to suggested</button>'+(c.saved?"":'<button class="text-btn" data-act="ai-keep">Save to my workouts</button>')+'</div>';
   if(AI.note)h+='<p class="note">'+esc(AI.note)+'</p>';
   if(!SAMPLE)return mine||AI.note?h+'</div>':"";
+  if(AI.note&&AI.hand)AI.note="";
   if(AI.off)return h+(AI.err?'<p class="note">'+esc(AI.err)+'</p>':"")+'</div>';
   if(AI.prop){
     h+='<div class="label">Proposed changes</div>'+(AI.prop.note?'<p class="note">'+esc(AI.prop.note)+'</p>':'')+'<div class="checks">';
     AI.prop.list.forEach(function(ch,i){h+='<label class="check"><input type="checkbox" data-ch="ai-pick" data-i="'+i+'"'+(ch.on?" checked":"")+'><span class="nm prop"><b>'+esc(chLine(ch))+'</b>'+(ch.why?'<small>'+esc(ch.why)+'</small>':'')+'</span></label>';});
     return h+'</div><div class="btnrow"><button class="primary" data-act="ai-apply">Apply ticked changes</button><button class="text-btn" data-act="ai-drop">Discard</button></div></div>';
+  }
+  if(AI.hand){
+    h+='<div class="label">Ask Claude</div><ol class="cues"><li>Open Claude with your request'+(AI.hand.copied?" (it's also copied, so paste it if the box is empty)":"")+', and send it.</li><li>Copy Claude\'s whole reply and paste it below.</li></ol>';
+    h+='<div class="btnrow"><a class="primary" href="https://claude.ai/new?q='+encodeURIComponent(AI.hand.prompt)+'" target="_blank" rel="noopener">Open Claude</a><button class="text-btn" data-act="ai-copy">Copy request</button></div>';
+    h+='<div class="field"><label for="ai-reply">Claude\'s reply</label><textarea id="ai-reply" class="inp bk" data-in="ai-reply" placeholder="Paste the reply here">'+esc(AI.hand.reply)+'</textarea></div>';
+    if(AI.err)h+='<p class="note ai-err">'+esc(AI.err)+'</p>';
+    return h+'<div class="btnrow"><button class="primary" data-act="ai-read">Show the changes</button><button class="text-btn" data-act="ai-drop">Cancel</button></div></div>';
   }
   if(AI.opts){
     h+='<div class="label">Options</div>'+(AI.opts.note?'<p class="note">'+esc(AI.opts.note)+'</p>':'');
@@ -1873,7 +1861,7 @@ function aiBox(d,e){
   }
   h+='<label class="label" for="ai-q">'+(mine?"Change it again":"Ask for a change")+'</label>';
   if(AI.busy)return h+'<div class="ai-busy"><span class="dots" aria-hidden="true"></span><span>Working on it. Usually 10–30 seconds.</span><button class="text-btn" data-act="ai-stop">Stop</button></div></div>';
-  h+='<div class="ai-row"><input id="ai-q" class="inp" data-in="ai-q" maxlength="300" value="'+esc(AI.q)+'" placeholder="e.g. swap the pull-ups, 25 minutes, sore left shoulder" enterkeyhint="go"><button class="primary" data-act="ai-go">Ask</button></div>';
+  h+='<div class="ai-row"><input id="ai-q" class="inp" data-in="ai-q" maxlength="300" value="'+esc(AI.q)+'" placeholder="e.g. swap the pull-ups, 25 minutes, sore left shoulder" enterkeyhint="go"><button class="primary" data-act="ai-go">'+(SAMPLE.handoff?"Write request":"Ask")+'</button></div>';
   h+='<div class="chips">'+AI_CHIPS.map(function(t){return '<button class="chipbtn" data-act="ai-chip" data-v="'+esc(t)+'">'+esc(t)+'</button>';}).join("")+'</div>';
   if(AI.err)h+='<p class="note ai-err">'+esc(AI.err)+'</p>';
   return h+'</div>';
@@ -2504,7 +2492,7 @@ function viewProgram(){
   }
   h+='<section class="card"><div class="card-head"><h2>Settings</h2></div><div class="field"><label for="p-unit">Gym weight unit</label><select id="p-unit" class="inp" data-ch="unit"><option value="lb"'+(S.program.unit==="lb"?" selected":"")+'>Pounds (lb)</option><option value="kg"'+(S.program.unit==="kg"?" selected":"")+'>Kilograms (kg)</option></select></div>';
   h+=S.confirmReset?'<div class="confirm"><span>Reset every workout and the essentials to '+(S.program.profile?"the plan built from your profile":"the original program")+'? Your logs stay.</span><button class="danger" data-act="reset-yes">Reset program</button><button class="text-btn" data-act="reset-no">Cancel</button></div>':'<button class="small-btn" data-act="reset">'+(S.program.profile?"Rebuild plan from my profile":"Reset program to original")+'</button>';
-  return h+'</section>'+aiKeyCard()+accountCard()+dataCard()+'</fieldset>';
+  return h+'</section>'+accountCard()+dataCard()+'</fieldset>';
 }
 
 /* ---------- setup ---------- */
@@ -2763,8 +2751,8 @@ root.addEventListener("click",function(ev){
   if(a==="dismiss-setup"){S.program.setupSeen=true;persist("program");render();return;}
   switch(a){
     case "tab":S.tab=b.dataset.v;S.confirmReset=false;if(S.tab==="cal")S.calMonth=S.date.slice(0,7);render();window.scrollTo(0,0);return;
-    case "prev":SW=null;CK=null;S.date=addDays(d,-1);AI.err="";AI.note="";break;
-    case "next":SW=null;CK=null;S.date=addDays(d,1);AI.err="";AI.note="";break;
+    case "prev":SW=null;CK=null;AI.hand=null;AI.prop=null;AI.opts=null;S.date=addDays(d,-1);AI.err="";AI.note="";break;
+    case "next":SW=null;CK=null;AI.hand=null;AI.prop=null;AI.opts=null;S.date=addDays(d,1);AI.err="";AI.note="";break;
     case "today":S.date=todayKey();break;
     case "goto":S.date=b.dataset.d;S.view="today";if(S.tab!=="today"){S.tab="today";render();window.scrollTo(0,0);return;}break;
     case "open":var av=b.dataset.v;e=ensureEntry(d);var so=suggest(d);
@@ -2802,12 +2790,12 @@ root.addEventListener("click",function(ev){
     case "ai-stop":if(AI.ctl)AI.ctl.abort();AI.busy=false;AI.ctl=null;break;
     case "ai-undo":aiUndo(d);break;
     case "ai-apply":if(AI.prop){var np=dayApply(d,AI.prop.list,AI.prop.q,AI.prop.note);AI.note=np?"":"Nothing was ticked, so nothing changed.";}break;
-    case "ai-drop":AI.prop=null;AI.opts=null;break;
+    case "ai-drop":AI.prop=null;AI.opts=null;AI.hand=null;AI.err="";break;
+    case "ai-copy":if(AI.hand){var hh=AI.hand;try{navigator.clipboard.writeText(hh.prompt).then(function(){hh.copied=true;AI.note="Request copied.";safeRender();},function(){AI.err="Couldn't copy. Use Open Claude instead.";safeRender();});}catch(_){AI.err="Couldn't copy. Use Open Claude instead.";}}return;
+    case "ai-read":if(AI.hand){var ta=document.getElementById("ai-reply"),hq=AI.hand.q,rr=parseJsonReply(ta?ta.value:AI.hand.reply);AI.err="";if(!rr){AI.err="That doesn't look like Claude's reply. Copy the whole reply, including the first { and the last }.";break;}aiApply(d,rr,hq);if(!AI.err)AI.hand=null;}break;
     case "ai-use":if(AI.opts){var oo=AI.opts.list[+b.dataset.i];if(oo)applyFull(d,oo,AI.opts.q);}break;
     case "ex-del":e=ensureEntry(d);dayRemove(d,e,false,b.dataset.ex);touch(d);break;
     case "ex-add":var an=(ADDX.name||"").trim();if(!an){var ai2=document.getElementById("addx-name");if(ai2)ai2.focus();return;}e=ensureEntry(d);dayAdd(d,e,false,null,an);ADDX.name="";touch(d);break;
-    case "aik-save":var kk=(AIKF.key||"").trim(),mm=(AIKF.model||AIK.model).trim();AIKF.err="";if(kk.length<20){AIKF.err="Paste the whole key. It starts with sk-ant-.";break;}AIK.key=kk;AIK.model=mm||AIK.model;if(!aikSave()){AIK.key="";AIKF.err="Couldn't save the key on this device.";break;}AIKF.key="";AIKF.msg="Saved. Open any workout and ask for a change.";SAMPLE=OWN_AI;AI.off=false;break;
-    case "aik-del":AIK.key="";aikSave();SAMPLE=null;AIKF.msg="";AIKF.err="";break;
     case "sy-in":syncAuth(false);return;
     case "sy-up":syncAuth(true);return;
     case "sy-now":SY.msg="";SY.err="";syncPull().then(function(ok){SY.msg=ok?"Synced.":"Couldn't sync just now. Your logs are safe on this device.";render();});return;
@@ -2866,8 +2854,7 @@ root.addEventListener("input",function(ev){
   if(k.indexOf("su-")===0){suInput(t);return;}
   if(k==="ai-q"){AI.q=t.value;return;}
   if(k==="addx"){ADDX.name=t.value;return;}
-  if(k==="aik-key"){AIKF.key=t.value;return;}
-  if(k==="aik-model"){AIKF.model=t.value;return;}
+  if(k==="ai-reply"){if(AI.hand)AI.hand.reply=t.value;return;}
   if(k==="sy-email"){SY.email=t.value;return;}
   if(k==="sy-pw"){SY.pw=t.value;return;}
   if(k==="bk-paste"){BK.paste=t.value;BK.pending=null;return;}

@@ -72,7 +72,7 @@ From that it builds:
 
 | | |
 | --- | --- |
-| Delivery | A static website with no build step and no dependencies: `index.html`, `app.js` (the app, about 300 KB), `sync.js` (accounts and sync), `config.js` (sync settings), `styles.css`, plus `sw.js` and `manifest.webmanifest` so it installs to a phone's home screen and opens offline |
+| Delivery | A static website with no build step and no dependencies: `index.html`, `app.js` (the app, about 300 KB), `sync.js` (accounts and sync), `config.js` (sync settings), `styles.css`, `fonts/` (self-hosted, SIL Open Font License), plus `sw.js` and `manifest.webmanifest` so it installs to a phone's home screen and opens offline |
 | Host | Any static host; this repo is set up for GitHub Pages. The same `app.js` still runs inside a Claude artifact, where it uses the artifact's storage and the viewer's Claude account instead |
 | Rendering | HTML is built as strings and `render()` redraws the view. Event delegation goes through `data-act` / `data-ch` / `data-in` attributes |
 | State | `S.program` (profile, templates, week plan, settings) and `S.months` (logs). Derived caches (`HC` history, `SC` suggestions, `LC` learning, `HB` habits) are cleared whenever anything changes |
@@ -122,7 +122,7 @@ A day `entry` holds:
 
 Backups are plain JSON shaped `{ app: "hybrid-athletics", v: 1, program, months }`. Restore can either merge or replace.
 
-The workout helper calls the Anthropic API straight from the browser with a key the person pastes in under Program. The key is kept in that browser only (`ha-ai-v1`) and is never synced.
+The workout helper has no server and no API key. Outside Claude it writes the request, opens it in the person's own Claude app (`claude.ai/new?q=…`, also copied to the clipboard), and reads the reply they paste back. Inside a Claude artifact it asks Claude directly.
 
 ---
 
@@ -257,7 +257,7 @@ Sport add-ons (`ADDONS`) attach at most 2 of these extras to a general workout, 
 - **Suggestion logging is too thin to evaluate.** It doesn't record the scores or alternatives at the time of a suggestion, so there's no way to measure later whether a change made suggestions better.
 - **Sync stores documents, not rows.** Month blobs can't be queried across users, so nothing can be learned across people yet.
 - **Sync has only been tested against a mock.** `tests/smoke.js` fakes the Supabase endpoints; it has not been run against a live project.
-- **The workout helper needs your own API key**, and a key in a browser can be read by anyone with access to that device.
+- **The workout helper is a copy-and-paste round trip** through the Claude app when used on the website.
 - **One 300 KB script** is hard to test and extend: the library, engine, learning and UI are all mixed together in `app.js`.
 
 ---
@@ -345,7 +345,7 @@ Ship only what beats the baseline. Keep the "What it has learned" card honest by
 - [ ] Split `app.js` into library / engine / learning / ui modules with tests (no behaviour change)
 - [x] Standalone website: installable, works offline, backup file import
 - [x] Accounts and sync (document level)
-- [x] Workout helper outside Claude (your own API key), with a change list you accept or reject
+- [x] Workout helper outside Claude (hand-off to the Claude app, no API key), with a change list you accept or reject
 - [x] Character sheet: training load per muscle group by week and month
 - [ ] IndexedDB storage and a real Postgres schema in place of month documents
 - [ ] Suggestion event logging (context, candidates, probabilities, outcome)
@@ -376,8 +376,6 @@ It's static files with no build step.
 4. For sign-up without an email step, turn off "Confirm email" under Authentication → Sign In / Providers → Email.
 
 **Moving logs from the Claude artifact:** in the artifact, Program → Your data → Back up. On the website, tap "Already have logs?" on the first screen and paste the backup or choose the file.
-
-**Workout helper (optional):** Program → Workout helper, paste an Anthropic API key.
 
 **Tests:** `npm install && npm test`.
 
