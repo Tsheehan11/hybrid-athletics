@@ -1466,9 +1466,9 @@ function learn(){
   /* 4) recovery: does yesterday's load on a muscle group drag down today's numbers? */
   var samp=[],G0=["push","pull","legs","core","grip","fingers"];
   days.forEach(function(p){var d=p[0],e=p[1];if(!homeDone(e)&&!gymDone(e))return;
-    var y1=dayLoad(getEntry(addDays(d,-1))).L,y2=dayLoad(getEntry(addDays(d,-2))).L;
+    var FR=fatigueRaw(d);
     var t=tplOfEntry(e),gt=gymDone(e)?gtplById(e.gtpl):null;
-    function add(load,ratio){if(!load||!(ratio>0))return;var x={};G0.forEach(function(g){var f=((y1[g]||0)+.5*(y2[g]||0))*((load[g]||0)/2);if(f>0)x[g]=f;});samp.push({d:d,x:x,r:Math.max(.5,Math.min(1.5,ratio))});}
+    function add(load,ratio){if(!load||!(ratio>0))return;var x={};G0.forEach(function(g){var f=(FR[g]||0)*((load[g]||0)/2);if(f>0)x[g]=f;});samp.push({d:d,x:x,r:Math.max(.5,Math.min(1.5,ratio))});}
     for(var id in (e.ex||{})){var r=e.ex[id];if(!r||!r.name)continue;var cur=(r.sets||[]).filter(filled).map(Number);if(!cur.length)continue;
       var prev=lastHome(r.name,d);if(!prev||addDays(prev.d,21)<d)continue;var pv=prev.sets.filter(filled).map(Number);if(!pv.length)continue;
       add(t&&t.load,avg(cur)/Math.max(1,avg(pv)));}
@@ -1524,15 +1524,19 @@ function learnedCard(){
   all.forEach(function(t){var p=L.pref[t.id];if(p>=.34)likes.push(t.title);else if(p<=-.34)skips.push(t.title);});
   rows.push(["Your picks",likes.length||skips.length?(likes.length?"Suggested more: "+likes.join(", ")+". ":"")+(skips.length?"Suggested less, since you often swap them: "+skips.join(", ")+".":""):"No pattern yet. When you swap a suggested workout for another, it learns your preference."]);
   rows.push(["Exercise versions","Each exercise starts on the version you last logged, so moving up or down a step sticks."]);
+  var gl=grownList();rows.push(["Targets",gl.length?"Raised because you kept hitting the top of the range: "+gl.join(", ")+". They come back down if you fall short twice in a row.":"None raised yet. Hit the top of a range on every set a few sessions in a row and that exercise's range moves up."]);
   if(L.gym+L.home>=4)rows.push(["Home or gym","Last 6 weeks: "+L.home+" home and "+L.gym+" gym workouts. \"Where today?\" defaults from this."]);
   return '<section class="card"><div class="card-head"><h2>What it has learned</h2></div><dl class="pf">'+rows.map(function(r){return '<dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd>';}).join("")+'</dl></section>';
 }
 
+/* Fatigue carried into day d: each earlier day's load, weighted by how long ago it was.
+   FAT_K[0] is yesterday's weight, FAT_K[1] the day before, and so on. tests/replay.js compares
+   kernels against real logs; change the default only when a longer one predicts better. */
+var FAT_K=[1,.5];
+function fatigueRaw(d){var F={};for(var i=0;i<FAT_K.length;i++){if(!FAT_K[i])continue;var L=dayLoad(getEntry(addDays(d,-(i+1)))).L;for(var g in L)F[g]=(F[g]||0)+FAT_K[i]*L[g];}return F;}
 function suggest(d){
   if(SC[d])return SC[d];
-  var e1=getEntry(addDays(d,-1)),y=dayLoad(e1),y2=dayLoad(getEntry(addDays(d,-2))),F={},g;
-  for(g in y.L)F[g]=(F[g]||0)+y.L[g];
-  for(g in y2.L)F[g]=(F[g]||0)+.5*y2.L[g];
+  var e1=getEntry(addDays(d,-1)),y=dayLoad(e1),F=fatigueRaw(d),g;
   var LN=learn();for(g in F)if(LN.rec[g])F[g]*=LN.rec[g].m;
   var hardStreak=0,actStreak=0,i;
   for(i=1;i<=14;i++){if(dayLoad(getEntry(addDays(d,-i))).hard)hardStreak++;else break;}
@@ -1576,7 +1580,8 @@ function suggest(d){
   }
   /* one home pick whatever "where" says: home workouts plus home versions of the gym rotation, so "Not sure" and "Home only" agree */
   var homePool=S.program.tpl.filter(function(t){return !t.opt;}).concat(hasGym()?homeVersions():[]),best=null;
-  homePool.forEach(function(t){var r=score(t,1);if(!best||r.score<best.score)best=r;});
+  var ranked=homePool.map(function(t){return score(t,1);}).sort(function(a,b){return a.score-b.score;});
+  ranked.forEach(function(r){if(!best||r.score<best.score)best=r;});
   if(!best)best={t:{id:"mob",title:"Mobility + Recovery",kind:"recovery",load:{},ex:[],st:[]},ds:null,score:0};
   var reason;
   if(tired&&best.t.kind!=="strength")reason=weekFull?(flow?wdone+" workouts in the last 7 days, which meets your target. Mobility keeps you fresh.":"You've done your "+freq+" workouts this week. Mobility keeps you fresh for the rest."):hardStreak>=3?hardStreak+" hard days in a row. Go easy today.":actStreak+" active days in a row. Go easy today.";
@@ -1590,7 +1595,7 @@ function suggest(d){
   }
   var sports=profSports().map(function(s){return sportAdvice(s,d,e1,y);});
   var rest=behind?(flow?"Only "+wdone+" workout"+(wdone===1?"":"s")+" in the last 7 days, under your usual "+freq+". Good day to get one in.":daysLeft===1?"Last day of the week with "+left+" workout"+(left>1?"s":"")+" to go, so today counts.":left+" workouts left this week and "+daysLeft+" days to go, so today counts."):actStreak>=6?actStreak+" active days in a row. Consider a rest or mobility day.":null;
-  SC[d]={t:best.t,reason:reason,gym:gym,sports:sports,rest:rest,showHome:hasHome()&&W.v!=="gym",where:W};
+  SC[d]={t:best.t,reason:reason,gym:gym,sports:sports,rest:rest,rank:ranked.map(function(r){return {id:r.t.id,from:r.t.from||null,score:r.score};}),showHome:hasHome()&&W.v!=="gym",where:W};
   return SC[d];
 }
 /* sport-specific workouts get priority until they've been done often enough this week */
@@ -1635,41 +1640,16 @@ function sportAdvice(s,d,e1,y){
 }
 
 /* ---------- adjust a workout with a prompt (asks Claude on the viewer's own account) ---------- */
-var SAMPLE=null,AI={q:"",busy:false,err:"",note:"",off:false,ctl:null,prop:null,opts:null},CT=null;
+var SAMPLE=null,AI={q:"",busy:false,err:"",note:"",off:false,ctl:null,prop:null,opts:null,hand:null},CT=null;
 var AI_CHIPS=["Only 20 minutes","Make it harder","Go easier today","Give me 3 options"];
-/* Outside Claude, the helper calls the Anthropic API with a key the person pastes in. The key stays in this browser. */
-var AIK_KEY="ha-ai-v1",AIK={key:"",model:"claude-sonnet-5-5"},AIKF={key:"",model:"",msg:"",err:""};
-function aikLoad(){try{var o=JSON.parse(localStorage.getItem(AIK_KEY)||"null");if(o&&o.key){AIK.key=String(o.key);AIK.model=String(o.model||AIK.model);}}catch(_){}}
-function aikSave(){try{if(AIK.key)localStorage.setItem(AIK_KEY,JSON.stringify(AIK));else localStorage.removeItem(AIK_KEY);return true;}catch(_){return false;}}
-function aiErr(code,msg){var e=new Error(msg||code);e.code=code;return e;}
+/* Outside Claude there is no API to call, so the helper hands off: it writes the request, the person
+   sends it in their own Claude app, and pastes the reply back here. */
 function parseJsonReply(txt){var t=String(txt||""),a=t.indexOf("{"),b=t.lastIndexOf("}");if(a<0||b<=a)return null;try{return JSON.parse(t.slice(a,b+1));}catch(_){return null;}}
-var OWN_AI={json:function(prompt,o){
-  return fetch("https://api.anthropic.com/v1/messages",{method:"POST",signal:o&&o.signal,headers:{"content-type":"application/json","x-api-key":AIK.key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-    body:JSON.stringify({model:AIK.model,max_tokens:3000,messages:[{role:"user",content:prompt}]})})
-  .catch(function(err){throw aiErr(err&&err.name==="AbortError"?"cancelled":"offline");})
-  .then(function(res){return res.json().catch(function(){return null;}).then(function(j){
-    if(!res.ok)throw aiErr(res.status===401||res.status===403?"bad_key":res.status===404?"bad_model":res.status===429?"rate_limited":res.status===400&&j&&j.error&&/credit|billing/i.test(j.error.message||"")?"no_credit":"upstream_error");
-    var txt=((j&&j.content)||[]).filter(function(c){return c&&c.type==="text";}).map(function(c){return c.text;}).join("");
-    var out=parseJsonReply(txt);if(!out)throw aiErr("upstream_error");return out;});});
-}};
+var HANDOFF={handoff:true};
 function inClaude(){return !!(window.claude&&typeof window.claude.use==="function");}
 function initAI(){
-  if(!inClaude()){aikLoad();SAMPLE=AIK.key?OWN_AI:null;return;}
+  if(!inClaude()){SAMPLE=HANDOFF;return;}
   window.claude.use("sample").then(function(s){if(s&&typeof s.json==="function"){SAMPLE=s;safeRender();}}).catch(function(){});
-}
-function aiKeyCard(){
-  if(inClaude())return "";
-  var h='<section class="card"><div class="card-head"><h2>Workout helper</h2></div>';
-  if(AIK.key){
-    h+='<p class="note">The helper is on. It uses your Anthropic API key ending in <b>'+esc(AIK.key.slice(-4))+'</b> and the model <b>'+esc(AIK.model)+'</b>. The key is stored on this device only and is never synced.</p>';
-    if(AIKF.msg)h+='<p class="note ok-note">'+esc(AIKF.msg)+'</p>';
-    return h+'<div class="btnrow"><button class="text-btn" data-act="aik-del">Remove key</button></div></section>';
-  }
-  h+='<p class="note">Type what you want on any workout ("only 20 minutes", "swap the pull-ups", "give me 3 options") and Claude proposes the changes. This needs your own Anthropic API key. Each request costs a few cents on that account. The key is stored on this device only.</p>';
-  h+='<div class="field"><label for="aik-key">Anthropic API key</label><input id="aik-key" class="inp" type="password" autocomplete="off" data-in="aik-key" value="'+esc(AIKF.key)+'" placeholder="sk-ant-…"></div>';
-  h+='<div class="field"><label for="aik-model">Model</label><input id="aik-model" class="inp" autocomplete="off" data-in="aik-model" value="'+esc(AIKF.model||AIK.model)+'"></div>';
-  if(AIKF.err)h+='<p class="note ai-err">'+esc(AIKF.err)+'</p>';
-  return h+'<div class="btnrow"><button class="primary" data-act="aik-save">Save key</button></div></section>';
 }
 /* workouts adjusted for a single day live on that day's log */
 function customTpls(){if(CT)return CT;CT=[];allDays().forEach(function(p){if(p[1].custom)CT.push(p[1].custom);});return CT;}
@@ -1720,12 +1700,17 @@ function aiPrompt(d,e,q){
 function aiRun(d){
   if(!SAMPLE||AI.busy||AI.off)return;var q=(AI.q||"").trim();if(!q)return;
   var e=ensureEntry(d),prompt=aiPrompt(d,e,q),ctl=new AbortController();
+  if(SAMPLE.handoff){
+    AI.err="";AI.note="";AI.prop=null;AI.opts=null;AI.hand={q:q,prompt:prompt,copied:false,reply:""};
+    try{if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(prompt).then(function(){if(AI.hand){AI.hand.copied=true;safeRender();}},function(){});}catch(_){}
+    render();return;
+  }
   AI.busy=true;AI.err="";AI.note="";AI.prop=null;AI.opts=null;AI.ctl=ctl;render();
   SAMPLE.json(prompt,{signal:ctl.signal,cache:false}).then(function(r){aiApply(d,r,q);}).catch(function(err){
     var c=(err&&err.code)||"upstream_error";
     if(c==="cancelled")return;
     if(c==="not_granted"||c==="sampling_disabled"||c==="not_declared"||c==="capability_disabled"||c==="capability_removed"){AI.off=true;AI.err=c==="not_granted"?"Adjusting needs permission to use Claude. Reload the page to be asked again.":"Adjusting with Claude isn't available on this account.";return;}
-    AI.err=c==="bad_key"?"That API key was rejected. Check it under Program, Workout helper.":c==="bad_model"?"That model name wasn't recognised. Check it under Program, Workout helper.":c==="no_credit"?"Your Anthropic account is out of credit.":c==="offline"?"Can't reach Claude. Check your connection and try again.":c==="rate_limited"?"You've hit a usage limit. Try again in a little while.":c==="session_expired"?"Sign in to Claude again, then try once more.":c==="refused"?"Claude couldn't help with that one. Try wording it differently.":"That didn't come back right. Try again.";
+    AI.err=c==="rate_limited"?"You've hit a usage limit. Try again in a little while.":c==="session_expired"?"Sign in to Claude again, then try once more.":c==="refused"?"Claude couldn't help with that one. Try wording it differently.":"That didn't come back right. Try again.";
   }).then(function(){if(AI.ctl===ctl){AI.busy=false;AI.ctl=null;}render();});
 }
 function aiGym(e){return S.view==="session"?S.act==="gym":!!e&&e.type==="gym";}
@@ -1859,11 +1844,19 @@ function aiBox(d,e){
   if(mine)h+='<div class="warm"><b>Changed for today</b>'+(c.req?' · "'+esc(c.req)+'"':'')+'</div><div class="btnrow"><button class="text-btn" data-act="ai-undo">Back to suggested</button>'+(c.saved?"":'<button class="text-btn" data-act="ai-keep">Save to my workouts</button>')+'</div>';
   if(AI.note)h+='<p class="note">'+esc(AI.note)+'</p>';
   if(!SAMPLE)return mine||AI.note?h+'</div>':"";
+  if(AI.note&&AI.hand)AI.note="";
   if(AI.off)return h+(AI.err?'<p class="note">'+esc(AI.err)+'</p>':"")+'</div>';
   if(AI.prop){
     h+='<div class="label">Proposed changes</div>'+(AI.prop.note?'<p class="note">'+esc(AI.prop.note)+'</p>':'')+'<div class="checks">';
     AI.prop.list.forEach(function(ch,i){h+='<label class="check"><input type="checkbox" data-ch="ai-pick" data-i="'+i+'"'+(ch.on?" checked":"")+'><span class="nm prop"><b>'+esc(chLine(ch))+'</b>'+(ch.why?'<small>'+esc(ch.why)+'</small>':'')+'</span></label>';});
     return h+'</div><div class="btnrow"><button class="primary" data-act="ai-apply">Apply ticked changes</button><button class="text-btn" data-act="ai-drop">Discard</button></div></div>';
+  }
+  if(AI.hand){
+    h+='<div class="label">Ask Claude</div><ol class="cues"><li>Open Claude with your request'+(AI.hand.copied?" (it's also copied, so paste it if the box is empty)":"")+', and send it.</li><li>Copy Claude\'s whole reply and paste it below.</li></ol>';
+    h+='<div class="btnrow"><a class="primary" href="https://claude.ai/new?q='+encodeURIComponent(AI.hand.prompt)+'" target="_blank" rel="noopener">Open Claude</a><button class="text-btn" data-act="ai-copy">Copy request</button></div>';
+    h+='<div class="field"><label for="ai-reply">Claude\'s reply</label><textarea id="ai-reply" class="inp bk" data-in="ai-reply" placeholder="Paste the reply here">'+esc(AI.hand.reply)+'</textarea></div>';
+    if(AI.err)h+='<p class="note ai-err">'+esc(AI.err)+'</p>';
+    return h+'<div class="btnrow"><button class="primary" data-act="ai-read">Show the changes</button><button class="text-btn" data-act="ai-drop">Cancel</button></div></div>';
   }
   if(AI.opts){
     h+='<div class="label">Options</div>'+(AI.opts.note?'<p class="note">'+esc(AI.opts.note)+'</p>':'');
@@ -1873,7 +1866,7 @@ function aiBox(d,e){
   }
   h+='<label class="label" for="ai-q">'+(mine?"Change it again":"Ask for a change")+'</label>';
   if(AI.busy)return h+'<div class="ai-busy"><span class="dots" aria-hidden="true"></span><span>Working on it. Usually 10–30 seconds.</span><button class="text-btn" data-act="ai-stop">Stop</button></div></div>';
-  h+='<div class="ai-row"><input id="ai-q" class="inp" data-in="ai-q" maxlength="300" value="'+esc(AI.q)+'" placeholder="e.g. swap the pull-ups, 25 minutes, sore left shoulder" enterkeyhint="go"><button class="primary" data-act="ai-go">Ask</button></div>';
+  h+='<div class="ai-row"><input id="ai-q" class="inp" data-in="ai-q" maxlength="300" value="'+esc(AI.q)+'" placeholder="e.g. swap the pull-ups, 25 minutes, sore left shoulder" enterkeyhint="go"><button class="primary" data-act="ai-go">'+(SAMPLE.handoff?"Write request":"Ask")+'</button></div>';
   h+='<div class="chips">'+AI_CHIPS.map(function(t){return '<button class="chipbtn" data-act="ai-chip" data-v="'+esc(t)+'">'+esc(t)+'</button>';}).join("")+'</div>';
   if(AI.err)h+='<p class="note ai-err">'+esc(AI.err)+'</p>';
   return h+'</div>';
@@ -2039,24 +2032,65 @@ function exBlock(x,rec,mode,d){
     sets+='<label class="set">'+lbl+'<input type="number" inputmode="numeric" enterkeyhint="next" min="0" step="1" data-in="set" data-ex="'+esc(x.id)+'" data-mode="'+mode+'" data-i="'+i+'" value="'+(filled(v)?esc(v):"")+'" placeholder="'+esc(ph)+'" aria-label="'+esc(cur)+' set '+(i+1)+(x.unit==="sec"?" seconds":" reps")+'"></label>';}
   var lastLine=last?'Last time ('+fmtShort(last.d)+'): '+esc(setsText(last.sets))+(x.unit==="sec"?" s":""):"First time logging this. Your numbers will show here next time.";
   var ready="";
-  if(last&&meetsTop(last)&&(!last.tgt||last.tgt.max<=x.max))ready='<span class="chip">Hit the top of the range last time. '+esc(st.up?"Try "+st.up+".":"Slow the tempo or hold longer.")+'</span>';
+  if(x.grew)ready='<span class="chip">Range raised from '+x.grew.min+'–'+x.grew.max+(x.unit==="sec"?" s":"")+': you kept hitting the top.</span>';
+  else if(mode==="p"&&stalled(cur,d))ready='<span class="chip low">Same numbers three sessions running. Go for one more on the first set.</span>';
+  else if(last&&meetsTop(last)&&(!last.tgt||last.tgt.max<=x.max))ready='<span class="chip">Hit the top of the range last time. '+esc(st.up?"Try "+st.up+".":"Slow the tempo or hold longer.")+'</span>';
   else if(last&&last.tgt&&x.sets>1){var lv=last.sets.filter(filled).map(Number);if(lv.length&&lv.reduce(function(a,b){return a+b;},0)/lv.length<last.tgt.min)ready='<span class="chip low">Below the range last time.'+(st.down?" "+esc(st.down)+" is an option.":"")+'</span>';}
   var tags=(x.add&&SPORTS[x.add]?'<span class="xtag">For '+esc(SPORTS[x.add].n.split(" /")[0].toLowerCase())+'</span>':'')+(OPTX[x.id]?'<span class="xtag opt">If you have time</span>':'');
   return '<div class="ex'+(OPTX[x.id]?' optx':'')+'"><div class="ex-head"><div class="ex-name">'+nameHtml+'</div>'+infoBtn(cur)+'<div class="tgt num">'+tgtText(x)+'</div>'+(mode==="p"?'<button class="del" data-act="ex-del" data-ex="'+esc(x.id)+'" aria-label="Remove '+esc(cur)+' from today">×</button>':'')+'</div>'+(tags?'<div class="xtags">'+tags+'</div>':'')+ready+'<div class="sets">'+sets+'</div>'+(x.unit==="sec"?swHtml(x,rec,mode):"")+(swNext(rec,x)<0?'<button class="small-btn" data-act="set-add" data-ex="'+esc(x.id)+'" data-mode="'+mode+'">+ Extra set</button>':"")+fbHtml(mode+x.id,feedback(x,rec))+'<div class="last">'+(x.rest?'<b class="rest">Rest '+esc(x.rest)+'</b> · ':'')+lastLine+'</div></div>';
 }
+/* ---------- targets that grow with you ----------
+   Worked out from the logs each time, like the rest of the learning: hit the top of the range on every
+   set in consecutive sessions and the range for that exercise version moves up a step; fall short of the
+   bottom twice running and it comes back down. With a harder version to move to it waits one session longer. */
+function growStep(x){return x.unit==="sec"?Math.max(5,Math.round(x.max*.15/5)*5):Math.max(1,Math.round(x.max*.15));}
+function growth(x,name,before){
+  var a=hist().home[name]||[],st=growStep(x),lv=0,up=0,down=0,need=steps(x,name).up?3:2;
+  a.forEach(function(sx){if(sx.d>=before)return;
+    var v=(sx.sets||[]).filter(filled).map(Number);if(!v.length)return;
+    var mx=x.max+lv*st,mn=x.min+lv*st,full=v.length>=x.sets;
+    if(full&&v.slice(0,x.sets).every(function(n){return n>=mx;})){up++;down=0;if(up>=need&&lv<8){lv++;up=0;}}
+    else if(lv>0&&v.reduce(function(p,q){return p+q;},0)/v.length<mn){down++;up=0;if(down>=2){lv--;down=0;}}
+    else{up=0;down=0;}});
+  return lv;
+}
+function growEx(x,d,e){
+  if(!x||x.mob||x.min==null)return x;
+  var rec=e&&e.ex&&e.ex[x.id],name=(rec&&rec.name)||lastVersion(x,d,false),lv=growth(x,name,d);
+  if(!lv)return x;
+  var g=clone(x),st=growStep(x);g.min=x.min+lv*st;g.max=x.max+lv*st;g.grew={min:x.min,max:x.max,lv:lv};return g;
+}
+function dayExList(d,e){return curTpl(d,e).ex.map(function(x){return growEx(x,d,e);});}
+/* the same numbers three sessions running, short of the top: say so */
+function stalled(name,before){
+  var a=(hist().home[name]||[]).filter(function(sx){return sx.d<before;}).slice(-3);if(a.length<3)return false;
+  var k=a.map(function(sx){return (sx.sets||[]).filter(filled).join(",");});
+  return !!k[0]&&k[0]===k[1]&&k[1]===k[2]&&!meetsTop(a[2]);
+}
+function grownList(){
+  var out=[],seen={},t=addDays(todayKey(),1);
+  S.program.tpl.forEach(function(tp){tp.ex.forEach(function(x){if(x.mob)return;var n=lastVersion(x,t,false);if(seen[n])return;var lv=growth(x,n,t);if(lv){seen[n]=1;var st=growStep(x);out.push(n+" ("+(x.min+lv*st)+"–"+(x.max+lv*st)+(x.unit==="sec"?" s":"")+")");}});});
+  return out;
+}
+/* switching, the 5-minute version and the helper live behind one button, so the exercises come first */
+function chgPanel(inner,e){
+  var auto=!!(AI.busy||AI.hand||AI.prop||AI.opts||AI.err||AI.note||(e&&e.min)||(e&&e.custom&&(e.tpl===e.custom.id||e.gtpl===e.custom.id)));
+  var open=S.chg===false?false:(S.chg||auto);
+  return '<button class="text-btn chg-btn" data-act="chg" aria-expanded="'+!!open+'">'+(open?"Hide options":"Change this workout")+'</button>'+(open?'<div class="chg">'+inner+'</div>':'');
+}
 function homeCard(d,e){
   var useMin=!!(e&&e.min),t=curTpl(d,e),sg=suggest(d);
-  var list=useMin?MIN_EX:t.ex,store=useMin?(e&&e.mx)||{}:(e&&e.ex)||{};
+  var list=useMin?MIN_EX:t.ex.map(function(x){return growEx(x,d,e);}),store=useMin?(e&&e.mx)||{}:(e&&e.ex)||{};
   var fp=useMin?{min:5,opt:{}}:fitPlan(t,false,list);OPTX=fp.opt;
-  var h='<section class="card"><div class="card-head"><h2>'+esc(useMin?"5-minute version":t.title)+'</h2>'+estLine(fp)+'</div><label class="pill"><input type="checkbox" data-ch="min"'+(useMin?" checked":"")+'> Exhausted? 5-min version</label>';
+  var h='<section class="card"><div class="card-head"><h2>'+esc(useMin?"5-minute version":t.title)+'</h2>'+estLine(fp)+'</div>',pill='<label class="pill"><input type="checkbox" data-ch="min"'+(useMin?" checked":"")+'> Exhausted? 5-min version</label>';
   if(!useMin)h+=sameDayNote(d,e,t);
   if(Object.keys(fp.opt).length)h+='<p class="note">This runs about '+roundMin(fp.min)+' min at your pace, more than your '+fp.len+'. The marked exercises are the least important, so skip them if you\'re short on time.</p>';
   if(!useMin){
-    h+='<div class="tplsel"><label class="label" for="tplpick">Switch workout</label><select id="tplpick" class="inp" data-ch="tpl">'+(function(){var o=function(tt){return '<option value="'+esc(tt.id)+'"'+(tt.id===t.id?" selected":"")+'>'+esc(tt.title)+(tt.id===sg.t.id?" (suggested)":tt.opt?" (optional)":"")+'</option>';},hv=homeVersions(),cu=t.id.indexOf("u-")===0?'<option value="'+esc(t.id)+'" selected>'+esc(t.title)+' (adjusted)</option>':"";
-      return cu+(hv.length?'<optgroup label="Home workouts">'+S.program.tpl.map(o).join("")+'</optgroup><optgroup label="Gym days, done at home">'+hv.map(o).join("")+'</optgroup>':S.program.tpl.map(o).join(""));})()+'</select></div>'+aiBox(d,e);
+    h+=chgPanel(pill+'<div class="tplsel"><label class="label" for="tplpick">Switch workout</label><select id="tplpick" class="inp" data-ch="tpl">'+(function(){var o=function(tt){return '<option value="'+esc(tt.id)+'"'+(tt.id===t.id?" selected":"")+'>'+esc(tt.title)+(tt.id===sg.t.id?" (suggested)":tt.opt?" (optional)":"")+'</option>';},hv=homeVersions(),cu=t.id.indexOf("u-")===0?'<option value="'+esc(t.id)+'" selected>'+esc(t.title)+' (adjusted)</option>':"";
+      return cu+(hv.length?'<optgroup label="Home workouts">'+S.program.tpl.map(o).join("")+'</optgroup><optgroup label="Gym days, done at home">'+hv.map(o).join("")+'</optgroup>':S.program.tpl.map(o).join(""));})()+'</select></div>'+aiBox(d,e),e);
     if(t.warm)h+='<div class="warm"><b>Warm-up</b> · '+esc(t.warm)+'</div>';
     if(t.note)h+='<p class="note">'+esc(t.note)+'</p>';
-  } else h+='<p class="note">Enough to keep the daily habit going. Then tick off a few items in the checklist below.</p>';
+  } else h+=chgPanel(pill,e)+'<p class="note">Enough to keep the daily habit going. Then tick off a few items in the checklist below.</p>';
   if(!list.length){var rt=(!useMin&&t.st)||[],sto=(e&&e.st)||{};
     if(rt.length){var rn=rt.filter(function(s){return sto[s.name];}).length;
       h+='<div class="label group-lbl">The routine · '+rn+' of '+rt.length+' done</div><div class="checks">'+rt.map(function(s){return checkRow(s,sto[s.name]);}).join("")+'</div><p class="note">Work through these in order. Ticks here also tick your daily checklist.</p>';}
@@ -2111,7 +2145,7 @@ function gymCard(d,e){
   var gex=list.map(function(g){return g.ref?gymEx(g.ref):null;}).filter(Boolean),gfp=t&&gex.length?fitPlan(t,true,gex):null;
   var h='<section class="card"><div class="card-head"><h2>'+esc(t?t.title:"Gym session")+'</h2>'+(gfp?estLine(gfp):'')+'</div><span class="label">Weight in '+esc(u)+'</span>'+sameDayNote(d,e,t);
   if(gfp&&Object.keys(gfp.opt).length)h+='<p class="note">This runs about '+roundMin(gfp.min)+' min at your pace, more than your '+gfp.len+'. Skip the marked ones if you\'re short on time.</p>';
-  h+='<div class="tplsel"><label class="label" for="gtplpick">Workout</label><select id="gtplpick" class="inp" data-ch="gtpl">'+(t&&t.id.indexOf("u-")===0?'<option value="'+esc(t.id)+'" selected>'+esc(t.title)+' (adjusted)</option>':"")+(S.program.gtpl||[]).map(function(tt){return '<option value="'+esc(tt.id)+'"'+(t&&tt.id===t.id?" selected":"")+'>'+esc(tt.title)+(sg.gym&&tt.id===sg.gym.t.id?" (suggested)":"")+'</option>';}).join("")+'<option value=""'+(t?"":" selected")+'>Blank session</option></select></div>'+aiBox(d,e);
+  h+=chgPanel('<div class="tplsel"><label class="label" for="gtplpick">Workout</label><select id="gtplpick" class="inp" data-ch="gtpl">'+(t&&t.id.indexOf("u-")===0?'<option value="'+esc(t.id)+'" selected>'+esc(t.title)+' (adjusted)</option>':"")+(S.program.gtpl||[]).map(function(tt){return '<option value="'+esc(tt.id)+'"'+(t&&tt.id===t.id?" selected":"")+'>'+esc(tt.title)+(sg.gym&&tt.id===sg.gym.t.id?" (suggested)":"")+'</option>';}).join("")+'<option value=""'+(t?"":" selected")+'>Blank session</option></select></div>'+aiBox(d,e),e);
   if(t&&t.warm)h+='<div class="warm"><b>Warm-up</b> · '+esc(t.warm)+'</div>';
   if(t&&t.note)h+='<p class="note">'+esc(t.note)+'</p>';
   h+='<datalist id="gym-names">'+opts.map(function(n){return '<option value="'+esc(n)+'">';}).join("")+'</datalist>';
@@ -2457,12 +2491,13 @@ function viewProgress(){
   var h='<h1 class="page-title">Character sheet</h1>'+sheetCards();
   h+='<section class="card"><div class="card-head"><h2>Ready to level up</h2><span class="label num">'+(ready.length+gready.length)+'</span></div>';
   h+=ready.map(function(r){return '<div class="prow"><div class="pn">'+esc(r.n)+'</div><div class="pl">Hit '+esc(setsText(r.last.sets))+(r.last.unit==="sec"?" s":"")+' on '+fmtShort(r.last.d)+'. '+esc((function(u){return u?"Next: "+u+".":"Slow the tempo or add a harder version under Program.";})(stepsByName(r.n).up))+'</div></div>';}).join("")+gready.map(function(r){return '<div class="prow"><div class="pn">'+esc(r.n)+'</div><div class="pl">Hit the top of the range on '+fmtShort(r.last.d)+'. '+esc(r.pl.w!=null?"Next: "+r.pl.w+" "+wUnit()+".":"Add some weight next time.")+'</div></div>';}).join("")+(ready.length||gready.length?"":'<p class="empty">When you hit the top of the range on every set, the exercise shows up here.</p>');
-  h+='</section><section class="card"><div class="card-head"><h2>Calisthenics</h2><span class="label">Best set per session</span></div>';
-  h+=home.length?home.map(function(r){var vals=r.a.slice(-12).map(function(s){return Math.max.apply(null,s.sets.filter(filled).map(Number));});
+  h+='</section><section class="card"><div class="card-head"><h2>Calisthenics</h2><span class="label">Best set per session, most recent first</span></div>';
+  h+=home.length?home.slice(0,S.trAll?999:6).map(function(r){var vals=r.a.slice(-12).map(function(s){return Math.max.apply(null,s.sets.filter(filled).map(Number));});
     return '<div class="prow"><div class="pn">'+esc(r.n)+'</div>'+spark(vals)+'<div class="pl num">'+fmtShort(r.last.d)+': '+esc(setsText(r.last.sets))+(r.last.unit==="sec"?" s":"")+' · '+r.a.length+' session'+(r.a.length===1?"":"s")+'</div></div>';}).join(""):'<p class="empty">Log your first home workout and each exercise will get a trend line here.</p>';
   h+='</section><section class="card"><div class="card-head"><h2>Gym</h2><span class="label">Heaviest set, '+esc(S.program.unit)+'</span></div>';
-  h+=gym.length?gym.map(function(r){var vals=r.a.slice(-12).map(function(s){return Math.max.apply(null,s.sets.map(function(x){return filled(x.w)?+x.w:(filled(x.r)?+x.r:0);}));});
+  h+=gym.length?gym.slice(0,S.trAll?999:6).map(function(r){var vals=r.a.slice(-12).map(function(s){return Math.max.apply(null,s.sets.map(function(x){return filled(x.w)?+x.w:(filled(x.r)?+x.r:0);}));});
     return '<div class="prow"><div class="pn">'+esc(r.n)+'</div>'+spark(vals)+'<div class="pl num">'+fmtShort(r.last.d)+': '+esc(gymText(r.last.sets))+'</div></div>';}).join(""):'<p class="empty">Gym lifts show up here after your first gym session.</p>';
+  if(!S.trAll&&(home.length>6||gym.length>6))h+='<button class="small-btn" data-act="tr-all">Show every exercise ('+(home.length+gym.length)+')</button>';
   return h+'</section>';
 }
 function stretchRows(list){
@@ -2504,7 +2539,7 @@ function viewProgram(){
   }
   h+='<section class="card"><div class="card-head"><h2>Settings</h2></div><div class="field"><label for="p-unit">Gym weight unit</label><select id="p-unit" class="inp" data-ch="unit"><option value="lb"'+(S.program.unit==="lb"?" selected":"")+'>Pounds (lb)</option><option value="kg"'+(S.program.unit==="kg"?" selected":"")+'>Kilograms (kg)</option></select></div>';
   h+=S.confirmReset?'<div class="confirm"><span>Reset every workout and the essentials to '+(S.program.profile?"the plan built from your profile":"the original program")+'? Your logs stay.</span><button class="danger" data-act="reset-yes">Reset program</button><button class="text-btn" data-act="reset-no">Cancel</button></div>':'<button class="small-btn" data-act="reset">'+(S.program.profile?"Rebuild plan from my profile":"Reset program to original")+'</button>';
-  return h+'</section>'+aiKeyCard()+accountCard()+dataCard()+'</fieldset>';
+  return h+'</section>'+accountCard()+dataCard()+'</fieldset>';
 }
 
 /* ---------- setup ---------- */
@@ -2732,7 +2767,7 @@ function bkApply(){
 /* ---------- events ---------- */
 function editList(){return S.progTpl==="daily"?S.program.daily:tplById(S.progTpl).st;}
 function exById(id){var p=tplById(S.progTpl);if(!p)return null;for(var i=0;i<p.ex.length;i++)if(p.ex[i].id===id)return {p:p,i:i,x:p.ex[i]};return null;}
-function planEx(d,id,mode){var list=mode==="m"?MIN_EX:curTpl(d,getEntry(d)).ex;for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i];return null;}
+function planEx(d,id,mode){var list=mode==="m"?MIN_EX:dayExList(d,getEntry(d));for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i];return null;}
 function recFor(d,e,x,mode){
   if(mode!=="m"&&!e.tpl)e.tpl=curTpl(d,e).id;
   var bag=mode==="m"?(e.mx=e.mx||{}):(e.ex=e.ex||{});
@@ -2763,8 +2798,8 @@ root.addEventListener("click",function(ev){
   if(a==="dismiss-setup"){S.program.setupSeen=true;persist("program");render();return;}
   switch(a){
     case "tab":S.tab=b.dataset.v;S.confirmReset=false;if(S.tab==="cal")S.calMonth=S.date.slice(0,7);render();window.scrollTo(0,0);return;
-    case "prev":SW=null;CK=null;S.date=addDays(d,-1);AI.err="";AI.note="";break;
-    case "next":SW=null;CK=null;S.date=addDays(d,1);AI.err="";AI.note="";break;
+    case "prev":SW=null;CK=null;AI.hand=null;AI.prop=null;AI.opts=null;S.date=addDays(d,-1);AI.err="";AI.note="";break;
+    case "next":SW=null;CK=null;AI.hand=null;AI.prop=null;AI.opts=null;S.date=addDays(d,1);AI.err="";AI.note="";break;
     case "today":S.date=todayKey();break;
     case "goto":S.date=b.dataset.d;S.view="today";if(S.tab!=="today"){S.tab="today";render();window.scrollTo(0,0);return;}break;
     case "open":var av=b.dataset.v;e=ensureEntry(d);var so=suggest(d);
@@ -2772,7 +2807,7 @@ root.addEventListener("click",function(ev){
       if(av==="home"&&!e.tpl&&!homeDone(e)&&so.t){e.tpl=so.t.id;e.pin=1;e.sug=e.sug||{};e.sug.home=so.t.id;touch(d);}
       if(e.type==="rest")e.type="home";
       S.view="session";S.act=av;AI.err="";AI.note="";SW=null;render();window.scrollTo(0,0);return;
-    case "back":S.view="today";SW=null;CK=null;render();window.scrollTo(0,0);return;
+    case "back":S.view="today";SW=null;CK=null;delete S.chg;render();window.scrollTo(0,0);return;
     case "didit":var dv=b.dataset.v;e=ensureEntry(d);e.also=e.also||{};
       if(didSport(e,dv)){if(hasSportLog(e,dv)&&S.view!=="session"){S.view="session";S.act=dv;render();window.scrollTo(0,0);return;}
         e.also[dv]=false;if(dv==="run")delete e.run;if(e.type===dv)e.type="home";if(hasSportLog(e,dv)){var sl=sportLogW(e,dv);delete sl.effort;}}
@@ -2802,17 +2837,19 @@ root.addEventListener("click",function(ev){
     case "ai-stop":if(AI.ctl)AI.ctl.abort();AI.busy=false;AI.ctl=null;break;
     case "ai-undo":aiUndo(d);break;
     case "ai-apply":if(AI.prop){var np=dayApply(d,AI.prop.list,AI.prop.q,AI.prop.note);AI.note=np?"":"Nothing was ticked, so nothing changed.";}break;
-    case "ai-drop":AI.prop=null;AI.opts=null;break;
+    case "ai-drop":AI.prop=null;AI.opts=null;AI.hand=null;AI.err="";break;
+    case "ai-copy":if(AI.hand){var hh=AI.hand;try{navigator.clipboard.writeText(hh.prompt).then(function(){hh.copied=true;AI.note="Request copied.";safeRender();},function(){AI.err="Couldn't copy. Use Open Claude instead.";safeRender();});}catch(_){AI.err="Couldn't copy. Use Open Claude instead.";}}return;
+    case "ai-read":if(AI.hand){var ta=document.getElementById("ai-reply"),hq=AI.hand.q,rr=parseJsonReply(ta?ta.value:AI.hand.reply);AI.err="";if(!rr){AI.err="That doesn't look like Claude's reply. Copy the whole reply, including the first { and the last }.";break;}aiApply(d,rr,hq);if(!AI.err)AI.hand=null;}break;
     case "ai-use":if(AI.opts){var oo=AI.opts.list[+b.dataset.i];if(oo)applyFull(d,oo,AI.opts.q);}break;
     case "ex-del":e=ensureEntry(d);dayRemove(d,e,false,b.dataset.ex);touch(d);break;
     case "ex-add":var an=(ADDX.name||"").trim();if(!an){var ai2=document.getElementById("addx-name");if(ai2)ai2.focus();return;}e=ensureEntry(d);dayAdd(d,e,false,null,an);ADDX.name="";touch(d);break;
-    case "aik-save":var kk=(AIKF.key||"").trim(),mm=(AIKF.model||AIK.model).trim();AIKF.err="";if(kk.length<20){AIKF.err="Paste the whole key. It starts with sk-ant-.";break;}AIK.key=kk;AIK.model=mm||AIK.model;if(!aikSave()){AIK.key="";AIKF.err="Couldn't save the key on this device.";break;}AIKF.key="";AIKF.msg="Saved. Open any workout and ask for a change.";SAMPLE=OWN_AI;AI.off=false;break;
-    case "aik-del":AIK.key="";aikSave();SAMPLE=null;AIKF.msg="";AIKF.err="";break;
     case "sy-in":syncAuth(false);return;
     case "sy-up":syncAuth(true);return;
     case "sy-now":SY.msg="";SY.err="";syncPull().then(function(ok){SY.msg=ok?"Synced.":"Couldn't sync just now. Your logs are safe on this device.";render();});return;
     case "sy-out":HASync.signOut();SY.msg="";SY.err="";SY.last=0;setStatus("ok",localStatus());break;
     case "cs-period":S.csP=b.dataset.v;break;
+    case "chg":S.chg=b.getAttribute("aria-expanded")!=="true";break;
+    case "tr-all":S.trAll=true;break;
     case "ai-keep":aiKeep(d);break;
     case "st-all":e=ensureEntry(d);e.st=e.st||{};stretchList(d,e).forEach(function(s){e.st[s.name]=true;});touch(d);break;
     case "gadd":e=ensureEntry(d);e.gym=e.gym||[];e.gym.push({name:"",sets:[{w:"",r:""},{w:"",r:""},{w:"",r:""}]});touch(d);render();var ins=root.querySelectorAll('[data-in="gname"]');if(ins.length)ins[ins.length-1].focus();return;
@@ -2866,8 +2903,7 @@ root.addEventListener("input",function(ev){
   if(k.indexOf("su-")===0){suInput(t);return;}
   if(k==="ai-q"){AI.q=t.value;return;}
   if(k==="addx"){ADDX.name=t.value;return;}
-  if(k==="aik-key"){AIKF.key=t.value;return;}
-  if(k==="aik-model"){AIKF.model=t.value;return;}
+  if(k==="ai-reply"){if(AI.hand)AI.hand.reply=t.value;return;}
   if(k==="sy-email"){SY.email=t.value;return;}
   if(k==="sy-pw"){SY.pw=t.value;return;}
   if(k==="bk-paste"){BK.paste=t.value;BK.pending=null;return;}
@@ -2893,7 +2929,11 @@ root.addEventListener("input",function(ev){
 });
 
 /* test hook for offline checks; harmless in the page */
-window.__cali={swStart:function(d,i,m){swStart(d,i,m);},swStop:function(d){swStop(d);},sw:function(){return SW;},guideFor:function(n){return guideFor(n);},S:S,render:render,gymFeedback:function(x,g){return gymFeedback(x,g);},gymEx:function(i){return gymEx(i);},normalize:function(p){return normalizeProgram(p);},feedback:function(x,r){return feedback(x,r);},suggest:function(d){SC={};HC=null;return suggest(d);}};
+window.__cali={swStart:function(d,i,m){swStart(d,i,m);},swStop:function(d){swStop(d);},sw:function(){return SW;},guideFor:function(n){return guideFor(n);},S:S,render:render,gymFeedback:function(x,g){return gymFeedback(x,g);},gymEx:function(i){return gymEx(i);},normalize:function(p){return normalizeProgram(p);},feedback:function(x,r){return feedback(x,r);},suggest:function(d){SC={};HC=null;return suggest(d);},
+  /* for tests/replay.js */
+  engine:{reset:function(){HC=null;SC={};HB=null;HV=null;CT=null;LC=null;},setKernel:function(k){FAT_K=k.slice();HC=null;SC={};LC=null;},kernel:function(){return FAT_K.slice();},
+    fatigue:function(d){return fatigueRaw(d);},learn:function(){return learn();},allDays:function(){return allDays();},tplOf:function(e){return tplOfEntry(e);},homeDone:function(e){return homeDone(e);},
+    lastHome:function(n,d){return lastHome(n,d);},pairId:function(id){return pairId(id);}}};
 
 render();
 initStore();

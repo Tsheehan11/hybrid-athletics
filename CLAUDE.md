@@ -8,7 +8,8 @@ section before changing the engine or learning code.
 ## Layout
 
 - `app.js`: the whole app in one IIFE (~2,500 lines). Vanilla JS, no build step, no dependencies.
-- `styles.css`, `index.html` (only loads the other two).
+- `styles.css`, `index.html` (only loads the scripts and stylesheet), `sync.js` (Supabase accounts and sync),
+  `config.js` (project URL and publishable key), `sw.js` (offline cache), `fonts/` (self-hosted).
 - Keep JS in `app.js` and CSS in `styles.css`, never inline in `index.html`. The repo should show as
   JavaScript on GitHub.
 
@@ -38,7 +39,7 @@ multipliers are never loosened or made learnable. Learning may reorder safe opti
 
 ## Checking a change
 
-There is no test suite yet. Before saying a change is done:
+Before saying a change is done, run `npm install && npm test` (jsdom smoke test, network mocked), then:
 
 1. `node --check app.js`
 2. Load `index.html` (a local static server, or jsdom) and confirm: no console errors, the setup
