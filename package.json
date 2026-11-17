@@ -1,0 +1,12 @@
+{
+  "name": "hybrid-athletics",
+  "private": true,
+  "description": "Training log for calisthenics, gym and sport, with shared fatigue.",
+  "scripts": {
+    "test": "node tests/smoke.js",
+    "start": "python3 -m http.server 8080"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}
