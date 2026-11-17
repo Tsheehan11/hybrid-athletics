@@ -62,6 +62,8 @@ const names = (a) => [...a.doc.querySelectorAll(".ex .ex-name")].map((n) => { co
   assert.strictEqual(JSON.stringify(day().ex.d1b.sets), "[10,9,8]", "logged sets survive an edit");
 
   /* helper: writes a request for Claude, reads the pasted reply, lists the changes, applies them */
+  assert(!a.doc.getElementById("ai-q") || a.doc.querySelector('[data-act="chg"]').getAttribute("aria-expanded") === "true");
+  if (!a.doc.getElementById("ai-q")) a.click('[data-act="chg"]');
   a.type("#ai-q", "only 20 minutes"); a.click('[data-act="ai-go"]');
   const link = a.doc.querySelector('a[href^="https://claude.ai/new?q="]');
   assert(link && /only%2020%20minutes/.test(link.href), "request link carries the prompt");

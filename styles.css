@@ -475,3 +475,10 @@ input[type="checkbox"]:checked{background:var(--ink);box-shadow:inset 0 0 0 3px 
 a.text-btn{color:var(--ink);text-decoration:none}
 @media (max-width:420px){.stats.four{grid-template-columns:repeat(2,1fr)}.stats.four .stat:nth-child(3){border-left:0}.stats.four .stat:nth-child(n+3){border-top:.5px solid var(--line)}.page-title,.datebar h1{font-size:32px}}
 .chip{font-family:var(--body);font-style:italic;font-size:15px;text-transform:none;letter-spacing:0;border-style:dashed;border-radius:1px;padding:3px 8px}
+/* workout page: options tucked behind one button, compact timer */
+.chg-btn{align-self:flex-start}
+.chg{display:flex;flex-direction:column;gap:12px;border-top:.5px solid var(--line);border-bottom:.5px solid var(--line);padding:12px 0}
+.sess{padding:10px 14px}
+.prow svg{opacity:.9}
+input[type="number"]{-moz-appearance:textfield;appearance:textfield}
+input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
