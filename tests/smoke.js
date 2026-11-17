@@ -13,7 +13,7 @@ function page(config) {
       (f === "config.js" ? "window.HA_CONFIG=" + JSON.stringify(config || {}) : fs.readFileSync(path.join(ROOT, f), "utf8")) + "</script>");
 }
 const remote = { docs: [] };
-function boot(seed, config, reply) {
+function boot(seed, config) {
   const errors = [];
   const dom = new JSDOM(page(config), { runScripts: "dangerously", pretendToBeVisual: true, url: "https://example.test/", beforeParse(w) {
     w.scrollTo = () => {};
@@ -21,7 +21,6 @@ function boot(seed, config, reply) {
     w.addEventListener("error", (e) => errors.push(String(e.message)));
     w.fetch = (url, o = {}) => {
       const J = (b, st = 200) => Promise.resolve({ ok: st < 300, status: st, text: () => Promise.resolve(b == null ? "" : JSON.stringify(b)), json: () => Promise.resolve(b) });
-      if (/api\.anthropic\.com/.test(url)) return J({ content: [{ type: "text", text: JSON.stringify(reply) }] });
       if (/auth\/v1\/token/.test(url)) return J({ access_token: "tok", refresh_token: "ref", expires_in: 3600, user: { id: "u1", email: "me@example.com" } });
       if (/rest\/v1\/docs\?select/.test(url)) return J(remote.docs);
       if (/rest\/v1\/docs/.test(url)) { JSON.parse(o.body).forEach((r) => { remote.docs = remote.docs.filter((x) => x.id !== r.id).concat([r]); }); return J(null, 201); }
@@ -40,7 +39,8 @@ const names = (a) => [...a.doc.querySelectorAll(".ex .ex-name")].map((n) => { co
   /* a device with one logged day, so the setup wizard is skipped */
   const d = new Date(), key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   const seed = { months: { ["m-" + key.slice(0, 7)]: { days: { [key]: { type: "home", tpl: "push", ex: { d1b: { name: "Push-ups", sets: [10, 9, 8], unit: "reps", tgt: { sets: 3, min: 5, max: 8 } } } } } } } };
-  const a = boot(seed, { supabaseUrl: "https://x.supabase.co", supabaseKey: "anon" }, { mode: "changes", note: "Shorter.", changes: [{ op: "remove", target: "Table rows", why: "saves time" }, { op: "add", exercise: { name: "Dead bug", sets: 2, min: 8, max: 10, unit: "reps", perSide: true }, why: "core" }] });
+  const reply = { mode: "changes", note: "Shorter.", changes: [{ op: "remove", target: "Table rows", why: "saves time" }, { op: "add", exercise: { name: "Dead bug", sets: 2, min: 8, max: 10, unit: "reps", perSide: true }, why: "core" }] };
+  const a = boot(seed, { supabaseUrl: "https://x.supabase.co", supabaseKey: "anon" });
   await wait(400);
 
   /* character sheet */
@@ -61,11 +61,13 @@ const names = (a) => [...a.doc.querySelectorAll(".ex .ex-name")].map((n) => { co
   const day = () => a.S().months["m-" + key.slice(0, 7)].days[key];
   assert.strictEqual(JSON.stringify(day().ex.d1b.sets), "[10,9,8]", "logged sets survive an edit");
 
-  /* helper: proposals are listed, then applied */
-  a.S().view = "today"; a.render(); a.click('[data-act="tab"][data-v="plan"]');
-  a.type("#aik-key", "sk-ant-test-0123456789abcdef"); a.click('[data-act="aik-save"]');
-  a.click('[data-act="tab"][data-v="today"]'); a.S().view = "session"; a.S().act = "home"; a.render();
-  a.type("#ai-q", "only 20 minutes"); a.click('[data-act="ai-go"]'); await wait(100);
+  /* helper: writes a request for Claude, reads the pasted reply, lists the changes, applies them */
+  a.type("#ai-q", "only 20 minutes"); a.click('[data-act="ai-go"]');
+  const link = a.doc.querySelector('a[href^="https://claude.ai/new?q="]');
+  assert(link && /only%2020%20minutes/.test(link.href), "request link carries the prompt");
+  a.type("#ai-reply", "nonsense"); a.click('[data-act="ai-read"]');
+  assert(/doesn't look like/.test(a.doc.querySelector(".ai-err").textContent));
+  a.type("#ai-reply", "Here you go:\n```json\n" + JSON.stringify(reply) + "\n```"); a.click('[data-act="ai-read"]');
   assert.strictEqual(a.doc.querySelectorAll(".nm.prop").length, 2, "two proposed changes");
   a.click('[data-act="ai-apply"]');
   assert(names(a).includes("Dead bug") && !names(a).includes("Table rows"));
