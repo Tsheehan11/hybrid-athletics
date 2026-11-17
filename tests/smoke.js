@@ -84,12 +84,21 @@ const names = (a) => [...a.doc.querySelectorAll(".ex .ex-name")].map((n) => { co
   assert(!b.S().setup, "wizard closes once logs arrive");
   assert(b.S().months["m-" + key.slice(0, 7)].days[key], "second device has the day");
 
+  /* targets grow: top of the range on every set, two sessions running (no harder version left) */
+  const day0 = (n) => { const x = new Date(d); x.setDate(x.getDate() - n); return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0"); };
+  const months = {}; [9, 6, 3].forEach((n) => { const k = day0(n), m = "m-" + k.slice(0, 7); (months[m] = months[m] || { days: {} }).days[k] = { type: "home", tpl: "c-antag", ex: { ca4: { name: "Prone Y-T-W with water bottles", sets: [10, 10], unit: "reps", tgt: { sets: 2, min: 8, max: 10 } } } }; });
+  const g = boot({ months }, {}); await wait(400);
+  const ge = g.w.__cali.S; const mk = "m-" + key.slice(0, 7); (ge.months[mk] = ge.months[mk] || { days: {} }).days[key] = { type: "home", tpl: "c-antag" };
+  ge.view = "session"; ge.act = "home"; g.render();
+  const ytw = [...g.doc.querySelectorAll(".ex")].find((x) => /Y-T-W/.test(x.textContent));
+  assert(ytw && /Range raised from 8–10/.test(ytw.textContent), "range raised after repeated top sets: " + (ytw && ytw.textContent.slice(0, 120)));
+
   /* no account configured: still works, account card says so */
   const c = boot(seed, {}); await wait(400);
   c.click('[data-act="tab"][data-v="plan"]');
   assert(/aren't switched on/.test(c.doc.body.textContent));
 
-  assert.strictEqual(JSON.stringify([a.errors, b.errors, c.errors]), "[[],[],[]]");
-  console.log("ok: sheet, manual edit, helper, sync, local-only");
+  assert.strictEqual(JSON.stringify([a.errors, b.errors, c.errors, g.errors]), "[[],[],[],[]]");
+  console.log("ok: sheet, manual edit, helper, sync, growing targets, local-only");
   process.exit(0);
 })().catch((e) => { console.error(e); process.exit(1); });

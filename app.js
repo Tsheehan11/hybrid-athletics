@@ -1524,6 +1524,7 @@ function learnedCard(){
   all.forEach(function(t){var p=L.pref[t.id];if(p>=.34)likes.push(t.title);else if(p<=-.34)skips.push(t.title);});
   rows.push(["Your picks",likes.length||skips.length?(likes.length?"Suggested more: "+likes.join(", ")+". ":"")+(skips.length?"Suggested less, since you often swap them: "+skips.join(", ")+".":""):"No pattern yet. When you swap a suggested workout for another, it learns your preference."]);
   rows.push(["Exercise versions","Each exercise starts on the version you last logged, so moving up or down a step sticks."]);
+  var gl=grownList();rows.push(["Targets",gl.length?"Raised because you kept hitting the top of the range: "+gl.join(", ")+". They come back down if you fall short twice in a row.":"None raised yet. Hit the top of a range on every set a few sessions in a row and that exercise's range moves up."]);
   if(L.gym+L.home>=4)rows.push(["Home or gym","Last 6 weeks: "+L.home+" home and "+L.gym+" gym workouts. \"Where today?\" defaults from this."]);
   return '<section class="card"><div class="card-head"><h2>What it has learned</h2></div><dl class="pf">'+rows.map(function(r){return '<dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd>';}).join("")+'</dl></section>';
 }
@@ -2027,10 +2028,45 @@ function exBlock(x,rec,mode,d){
     sets+='<label class="set">'+lbl+'<input type="number" inputmode="numeric" enterkeyhint="next" min="0" step="1" data-in="set" data-ex="'+esc(x.id)+'" data-mode="'+mode+'" data-i="'+i+'" value="'+(filled(v)?esc(v):"")+'" placeholder="'+esc(ph)+'" aria-label="'+esc(cur)+' set '+(i+1)+(x.unit==="sec"?" seconds":" reps")+'"></label>';}
   var lastLine=last?'Last time ('+fmtShort(last.d)+'): '+esc(setsText(last.sets))+(x.unit==="sec"?" s":""):"First time logging this. Your numbers will show here next time.";
   var ready="";
-  if(last&&meetsTop(last)&&(!last.tgt||last.tgt.max<=x.max))ready='<span class="chip">Hit the top of the range last time. '+esc(st.up?"Try "+st.up+".":"Slow the tempo or hold longer.")+'</span>';
+  if(x.grew)ready='<span class="chip">Range raised from '+x.grew.min+'–'+x.grew.max+(x.unit==="sec"?" s":"")+': you kept hitting the top.</span>';
+  else if(mode==="p"&&stalled(cur,d))ready='<span class="chip low">Same numbers three sessions running. Go for one more on the first set.</span>';
+  else if(last&&meetsTop(last)&&(!last.tgt||last.tgt.max<=x.max))ready='<span class="chip">Hit the top of the range last time. '+esc(st.up?"Try "+st.up+".":"Slow the tempo or hold longer.")+'</span>';
   else if(last&&last.tgt&&x.sets>1){var lv=last.sets.filter(filled).map(Number);if(lv.length&&lv.reduce(function(a,b){return a+b;},0)/lv.length<last.tgt.min)ready='<span class="chip low">Below the range last time.'+(st.down?" "+esc(st.down)+" is an option.":"")+'</span>';}
   var tags=(x.add&&SPORTS[x.add]?'<span class="xtag">For '+esc(SPORTS[x.add].n.split(" /")[0].toLowerCase())+'</span>':'')+(OPTX[x.id]?'<span class="xtag opt">If you have time</span>':'');
   return '<div class="ex'+(OPTX[x.id]?' optx':'')+'"><div class="ex-head"><div class="ex-name">'+nameHtml+'</div>'+infoBtn(cur)+'<div class="tgt num">'+tgtText(x)+'</div>'+(mode==="p"?'<button class="del" data-act="ex-del" data-ex="'+esc(x.id)+'" aria-label="Remove '+esc(cur)+' from today">×</button>':'')+'</div>'+(tags?'<div class="xtags">'+tags+'</div>':'')+ready+'<div class="sets">'+sets+'</div>'+(x.unit==="sec"?swHtml(x,rec,mode):"")+(swNext(rec,x)<0?'<button class="small-btn" data-act="set-add" data-ex="'+esc(x.id)+'" data-mode="'+mode+'">+ Extra set</button>':"")+fbHtml(mode+x.id,feedback(x,rec))+'<div class="last">'+(x.rest?'<b class="rest">Rest '+esc(x.rest)+'</b> · ':'')+lastLine+'</div></div>';
+}
+/* ---------- targets that grow with you ----------
+   Worked out from the logs each time, like the rest of the learning: hit the top of the range on every
+   set in consecutive sessions and the range for that exercise version moves up a step; fall short of the
+   bottom twice running and it comes back down. With a harder version to move to it waits one session longer. */
+function growStep(x){return x.unit==="sec"?Math.max(5,Math.round(x.max*.15/5)*5):Math.max(1,Math.round(x.max*.15));}
+function growth(x,name,before){
+  var a=hist().home[name]||[],st=growStep(x),lv=0,up=0,down=0,need=steps(x,name).up?3:2;
+  a.forEach(function(sx){if(sx.d>=before)return;
+    var v=(sx.sets||[]).filter(filled).map(Number);if(!v.length)return;
+    var mx=x.max+lv*st,mn=x.min+lv*st,full=v.length>=x.sets;
+    if(full&&v.slice(0,x.sets).every(function(n){return n>=mx;})){up++;down=0;if(up>=need&&lv<8){lv++;up=0;}}
+    else if(lv>0&&v.reduce(function(p,q){return p+q;},0)/v.length<mn){down++;up=0;if(down>=2){lv--;down=0;}}
+    else{up=0;down=0;}});
+  return lv;
+}
+function growEx(x,d,e){
+  if(!x||x.mob||x.min==null)return x;
+  var rec=e&&e.ex&&e.ex[x.id],name=(rec&&rec.name)||lastVersion(x,d,false),lv=growth(x,name,d);
+  if(!lv)return x;
+  var g=clone(x),st=growStep(x);g.min=x.min+lv*st;g.max=x.max+lv*st;g.grew={min:x.min,max:x.max,lv:lv};return g;
+}
+function dayExList(d,e){return curTpl(d,e).ex.map(function(x){return growEx(x,d,e);});}
+/* the same numbers three sessions running, short of the top: say so */
+function stalled(name,before){
+  var a=(hist().home[name]||[]).filter(function(sx){return sx.d<before;}).slice(-3);if(a.length<3)return false;
+  var k=a.map(function(sx){return (sx.sets||[]).filter(filled).join(",");});
+  return !!k[0]&&k[0]===k[1]&&k[1]===k[2]&&!meetsTop(a[2]);
+}
+function grownList(){
+  var out=[],seen={},t=addDays(todayKey(),1);
+  S.program.tpl.forEach(function(tp){tp.ex.forEach(function(x){if(x.mob)return;var n=lastVersion(x,t,false);if(seen[n])return;var lv=growth(x,n,t);if(lv){seen[n]=1;var st=growStep(x);out.push(n+" ("+(x.min+lv*st)+"–"+(x.max+lv*st)+(x.unit==="sec"?" s":"")+")");}});});
+  return out;
 }
 /* switching, the 5-minute version and the helper live behind one button, so the exercises come first */
 function chgPanel(inner,e){
@@ -2040,7 +2076,7 @@ function chgPanel(inner,e){
 }
 function homeCard(d,e){
   var useMin=!!(e&&e.min),t=curTpl(d,e),sg=suggest(d);
-  var list=useMin?MIN_EX:t.ex,store=useMin?(e&&e.mx)||{}:(e&&e.ex)||{};
+  var list=useMin?MIN_EX:t.ex.map(function(x){return growEx(x,d,e);}),store=useMin?(e&&e.mx)||{}:(e&&e.ex)||{};
   var fp=useMin?{min:5,opt:{}}:fitPlan(t,false,list);OPTX=fp.opt;
   var h='<section class="card"><div class="card-head"><h2>'+esc(useMin?"5-minute version":t.title)+'</h2>'+estLine(fp)+'</div>',pill='<label class="pill"><input type="checkbox" data-ch="min"'+(useMin?" checked":"")+'> Exhausted? 5-min version</label>';
   if(!useMin)h+=sameDayNote(d,e,t);
@@ -2727,7 +2763,7 @@ function bkApply(){
 /* ---------- events ---------- */
 function editList(){return S.progTpl==="daily"?S.program.daily:tplById(S.progTpl).st;}
 function exById(id){var p=tplById(S.progTpl);if(!p)return null;for(var i=0;i<p.ex.length;i++)if(p.ex[i].id===id)return {p:p,i:i,x:p.ex[i]};return null;}
-function planEx(d,id,mode){var list=mode==="m"?MIN_EX:curTpl(d,getEntry(d)).ex;for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i];return null;}
+function planEx(d,id,mode){var list=mode==="m"?MIN_EX:dayExList(d,getEntry(d));for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i];return null;}
 function recFor(d,e,x,mode){
   if(mode!=="m"&&!e.tpl)e.tpl=curTpl(d,e).id;
   var bag=mode==="m"?(e.mx=e.mx||{}):(e.ex=e.ex||{});
