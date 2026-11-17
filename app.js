@@ -2032,19 +2032,25 @@ function exBlock(x,rec,mode,d){
   var tags=(x.add&&SPORTS[x.add]?'<span class="xtag">For '+esc(SPORTS[x.add].n.split(" /")[0].toLowerCase())+'</span>':'')+(OPTX[x.id]?'<span class="xtag opt">If you have time</span>':'');
   return '<div class="ex'+(OPTX[x.id]?' optx':'')+'"><div class="ex-head"><div class="ex-name">'+nameHtml+'</div>'+infoBtn(cur)+'<div class="tgt num">'+tgtText(x)+'</div>'+(mode==="p"?'<button class="del" data-act="ex-del" data-ex="'+esc(x.id)+'" aria-label="Remove '+esc(cur)+' from today">×</button>':'')+'</div>'+(tags?'<div class="xtags">'+tags+'</div>':'')+ready+'<div class="sets">'+sets+'</div>'+(x.unit==="sec"?swHtml(x,rec,mode):"")+(swNext(rec,x)<0?'<button class="small-btn" data-act="set-add" data-ex="'+esc(x.id)+'" data-mode="'+mode+'">+ Extra set</button>':"")+fbHtml(mode+x.id,feedback(x,rec))+'<div class="last">'+(x.rest?'<b class="rest">Rest '+esc(x.rest)+'</b> · ':'')+lastLine+'</div></div>';
 }
+/* switching, the 5-minute version and the helper live behind one button, so the exercises come first */
+function chgPanel(inner,e){
+  var auto=!!(AI.busy||AI.hand||AI.prop||AI.opts||AI.err||AI.note||(e&&e.min)||(e&&e.custom&&(e.tpl===e.custom.id||e.gtpl===e.custom.id)));
+  var open=S.chg===false?false:(S.chg||auto);
+  return '<button class="text-btn chg-btn" data-act="chg" aria-expanded="'+!!open+'">'+(open?"Hide options":"Change this workout")+'</button>'+(open?'<div class="chg">'+inner+'</div>':'');
+}
 function homeCard(d,e){
   var useMin=!!(e&&e.min),t=curTpl(d,e),sg=suggest(d);
   var list=useMin?MIN_EX:t.ex,store=useMin?(e&&e.mx)||{}:(e&&e.ex)||{};
   var fp=useMin?{min:5,opt:{}}:fitPlan(t,false,list);OPTX=fp.opt;
-  var h='<section class="card"><div class="card-head"><h2>'+esc(useMin?"5-minute version":t.title)+'</h2>'+estLine(fp)+'</div><label class="pill"><input type="checkbox" data-ch="min"'+(useMin?" checked":"")+'> Exhausted? 5-min version</label>';
+  var h='<section class="card"><div class="card-head"><h2>'+esc(useMin?"5-minute version":t.title)+'</h2>'+estLine(fp)+'</div>',pill='<label class="pill"><input type="checkbox" data-ch="min"'+(useMin?" checked":"")+'> Exhausted? 5-min version</label>';
   if(!useMin)h+=sameDayNote(d,e,t);
   if(Object.keys(fp.opt).length)h+='<p class="note">This runs about '+roundMin(fp.min)+' min at your pace, more than your '+fp.len+'. The marked exercises are the least important, so skip them if you\'re short on time.</p>';
   if(!useMin){
-    h+='<div class="tplsel"><label class="label" for="tplpick">Switch workout</label><select id="tplpick" class="inp" data-ch="tpl">'+(function(){var o=function(tt){return '<option value="'+esc(tt.id)+'"'+(tt.id===t.id?" selected":"")+'>'+esc(tt.title)+(tt.id===sg.t.id?" (suggested)":tt.opt?" (optional)":"")+'</option>';},hv=homeVersions(),cu=t.id.indexOf("u-")===0?'<option value="'+esc(t.id)+'" selected>'+esc(t.title)+' (adjusted)</option>':"";
-      return cu+(hv.length?'<optgroup label="Home workouts">'+S.program.tpl.map(o).join("")+'</optgroup><optgroup label="Gym days, done at home">'+hv.map(o).join("")+'</optgroup>':S.program.tpl.map(o).join(""));})()+'</select></div>'+aiBox(d,e);
+    h+=chgPanel(pill+'<div class="tplsel"><label class="label" for="tplpick">Switch workout</label><select id="tplpick" class="inp" data-ch="tpl">'+(function(){var o=function(tt){return '<option value="'+esc(tt.id)+'"'+(tt.id===t.id?" selected":"")+'>'+esc(tt.title)+(tt.id===sg.t.id?" (suggested)":tt.opt?" (optional)":"")+'</option>';},hv=homeVersions(),cu=t.id.indexOf("u-")===0?'<option value="'+esc(t.id)+'" selected>'+esc(t.title)+' (adjusted)</option>':"";
+      return cu+(hv.length?'<optgroup label="Home workouts">'+S.program.tpl.map(o).join("")+'</optgroup><optgroup label="Gym days, done at home">'+hv.map(o).join("")+'</optgroup>':S.program.tpl.map(o).join(""));})()+'</select></div>'+aiBox(d,e),e);
     if(t.warm)h+='<div class="warm"><b>Warm-up</b> · '+esc(t.warm)+'</div>';
     if(t.note)h+='<p class="note">'+esc(t.note)+'</p>';
-  } else h+='<p class="note">Enough to keep the daily habit going. Then tick off a few items in the checklist below.</p>';
+  } else h+=chgPanel(pill,e)+'<p class="note">Enough to keep the daily habit going. Then tick off a few items in the checklist below.</p>';
   if(!list.length){var rt=(!useMin&&t.st)||[],sto=(e&&e.st)||{};
     if(rt.length){var rn=rt.filter(function(s){return sto[s.name];}).length;
       h+='<div class="label group-lbl">The routine · '+rn+' of '+rt.length+' done</div><div class="checks">'+rt.map(function(s){return checkRow(s,sto[s.name]);}).join("")+'</div><p class="note">Work through these in order. Ticks here also tick your daily checklist.</p>';}
@@ -2099,7 +2105,7 @@ function gymCard(d,e){
   var gex=list.map(function(g){return g.ref?gymEx(g.ref):null;}).filter(Boolean),gfp=t&&gex.length?fitPlan(t,true,gex):null;
   var h='<section class="card"><div class="card-head"><h2>'+esc(t?t.title:"Gym session")+'</h2>'+(gfp?estLine(gfp):'')+'</div><span class="label">Weight in '+esc(u)+'</span>'+sameDayNote(d,e,t);
   if(gfp&&Object.keys(gfp.opt).length)h+='<p class="note">This runs about '+roundMin(gfp.min)+' min at your pace, more than your '+gfp.len+'. Skip the marked ones if you\'re short on time.</p>';
-  h+='<div class="tplsel"><label class="label" for="gtplpick">Workout</label><select id="gtplpick" class="inp" data-ch="gtpl">'+(t&&t.id.indexOf("u-")===0?'<option value="'+esc(t.id)+'" selected>'+esc(t.title)+' (adjusted)</option>':"")+(S.program.gtpl||[]).map(function(tt){return '<option value="'+esc(tt.id)+'"'+(t&&tt.id===t.id?" selected":"")+'>'+esc(tt.title)+(sg.gym&&tt.id===sg.gym.t.id?" (suggested)":"")+'</option>';}).join("")+'<option value=""'+(t?"":" selected")+'>Blank session</option></select></div>'+aiBox(d,e);
+  h+=chgPanel('<div class="tplsel"><label class="label" for="gtplpick">Workout</label><select id="gtplpick" class="inp" data-ch="gtpl">'+(t&&t.id.indexOf("u-")===0?'<option value="'+esc(t.id)+'" selected>'+esc(t.title)+' (adjusted)</option>':"")+(S.program.gtpl||[]).map(function(tt){return '<option value="'+esc(tt.id)+'"'+(t&&tt.id===t.id?" selected":"")+'>'+esc(tt.title)+(sg.gym&&tt.id===sg.gym.t.id?" (suggested)":"")+'</option>';}).join("")+'<option value=""'+(t?"":" selected")+'>Blank session</option></select></div>'+aiBox(d,e),e);
   if(t&&t.warm)h+='<div class="warm"><b>Warm-up</b> · '+esc(t.warm)+'</div>';
   if(t&&t.note)h+='<p class="note">'+esc(t.note)+'</p>';
   h+='<datalist id="gym-names">'+opts.map(function(n){return '<option value="'+esc(n)+'">';}).join("")+'</datalist>';
@@ -2445,12 +2451,13 @@ function viewProgress(){
   var h='<h1 class="page-title">Character sheet</h1>'+sheetCards();
   h+='<section class="card"><div class="card-head"><h2>Ready to level up</h2><span class="label num">'+(ready.length+gready.length)+'</span></div>';
   h+=ready.map(function(r){return '<div class="prow"><div class="pn">'+esc(r.n)+'</div><div class="pl">Hit '+esc(setsText(r.last.sets))+(r.last.unit==="sec"?" s":"")+' on '+fmtShort(r.last.d)+'. '+esc((function(u){return u?"Next: "+u+".":"Slow the tempo or add a harder version under Program.";})(stepsByName(r.n).up))+'</div></div>';}).join("")+gready.map(function(r){return '<div class="prow"><div class="pn">'+esc(r.n)+'</div><div class="pl">Hit the top of the range on '+fmtShort(r.last.d)+'. '+esc(r.pl.w!=null?"Next: "+r.pl.w+" "+wUnit()+".":"Add some weight next time.")+'</div></div>';}).join("")+(ready.length||gready.length?"":'<p class="empty">When you hit the top of the range on every set, the exercise shows up here.</p>');
-  h+='</section><section class="card"><div class="card-head"><h2>Calisthenics</h2><span class="label">Best set per session</span></div>';
-  h+=home.length?home.map(function(r){var vals=r.a.slice(-12).map(function(s){return Math.max.apply(null,s.sets.filter(filled).map(Number));});
+  h+='</section><section class="card"><div class="card-head"><h2>Calisthenics</h2><span class="label">Best set per session, most recent first</span></div>';
+  h+=home.length?home.slice(0,S.trAll?999:6).map(function(r){var vals=r.a.slice(-12).map(function(s){return Math.max.apply(null,s.sets.filter(filled).map(Number));});
     return '<div class="prow"><div class="pn">'+esc(r.n)+'</div>'+spark(vals)+'<div class="pl num">'+fmtShort(r.last.d)+': '+esc(setsText(r.last.sets))+(r.last.unit==="sec"?" s":"")+' · '+r.a.length+' session'+(r.a.length===1?"":"s")+'</div></div>';}).join(""):'<p class="empty">Log your first home workout and each exercise will get a trend line here.</p>';
   h+='</section><section class="card"><div class="card-head"><h2>Gym</h2><span class="label">Heaviest set, '+esc(S.program.unit)+'</span></div>';
-  h+=gym.length?gym.map(function(r){var vals=r.a.slice(-12).map(function(s){return Math.max.apply(null,s.sets.map(function(x){return filled(x.w)?+x.w:(filled(x.r)?+x.r:0);}));});
+  h+=gym.length?gym.slice(0,S.trAll?999:6).map(function(r){var vals=r.a.slice(-12).map(function(s){return Math.max.apply(null,s.sets.map(function(x){return filled(x.w)?+x.w:(filled(x.r)?+x.r:0);}));});
     return '<div class="prow"><div class="pn">'+esc(r.n)+'</div>'+spark(vals)+'<div class="pl num">'+fmtShort(r.last.d)+': '+esc(gymText(r.last.sets))+'</div></div>';}).join(""):'<p class="empty">Gym lifts show up here after your first gym session.</p>';
+  if(!S.trAll&&(home.length>6||gym.length>6))h+='<button class="small-btn" data-act="tr-all">Show every exercise ('+(home.length+gym.length)+')</button>';
   return h+'</section>';
 }
 function stretchRows(list){
@@ -2760,7 +2767,7 @@ root.addEventListener("click",function(ev){
       if(av==="home"&&!e.tpl&&!homeDone(e)&&so.t){e.tpl=so.t.id;e.pin=1;e.sug=e.sug||{};e.sug.home=so.t.id;touch(d);}
       if(e.type==="rest")e.type="home";
       S.view="session";S.act=av;AI.err="";AI.note="";SW=null;render();window.scrollTo(0,0);return;
-    case "back":S.view="today";SW=null;CK=null;render();window.scrollTo(0,0);return;
+    case "back":S.view="today";SW=null;CK=null;delete S.chg;render();window.scrollTo(0,0);return;
     case "didit":var dv=b.dataset.v;e=ensureEntry(d);e.also=e.also||{};
       if(didSport(e,dv)){if(hasSportLog(e,dv)&&S.view!=="session"){S.view="session";S.act=dv;render();window.scrollTo(0,0);return;}
         e.also[dv]=false;if(dv==="run")delete e.run;if(e.type===dv)e.type="home";if(hasSportLog(e,dv)){var sl=sportLogW(e,dv);delete sl.effort;}}
@@ -2801,6 +2808,8 @@ root.addEventListener("click",function(ev){
     case "sy-now":SY.msg="";SY.err="";syncPull().then(function(ok){SY.msg=ok?"Synced.":"Couldn't sync just now. Your logs are safe on this device.";render();});return;
     case "sy-out":HASync.signOut();SY.msg="";SY.err="";SY.last=0;setStatus("ok",localStatus());break;
     case "cs-period":S.csP=b.dataset.v;break;
+    case "chg":S.chg=b.getAttribute("aria-expanded")!=="true";break;
+    case "tr-all":S.trAll=true;break;
     case "ai-keep":aiKeep(d);break;
     case "st-all":e=ensureEntry(d);e.st=e.st||{};stretchList(d,e).forEach(function(s){e.st[s.name]=true;});touch(d);break;
     case "gadd":e=ensureEntry(d);e.gym=e.gym||[];e.gym.push({name:"",sets:[{w:"",r:""},{w:"",r:""},{w:"",r:""}]});touch(d);render();var ins=root.querySelectorAll('[data-in="gname"]');if(ins.length)ins[ins.length-1].focus();return;
