@@ -1466,9 +1466,9 @@ function learn(){
   /* 4) recovery: does yesterday's load on a muscle group drag down today's numbers? */
   var samp=[],G0=["push","pull","legs","core","grip","fingers"];
   days.forEach(function(p){var d=p[0],e=p[1];if(!homeDone(e)&&!gymDone(e))return;
-    var y1=dayLoad(getEntry(addDays(d,-1))).L,y2=dayLoad(getEntry(addDays(d,-2))).L;
+    var FR=fatigueRaw(d);
     var t=tplOfEntry(e),gt=gymDone(e)?gtplById(e.gtpl):null;
-    function add(load,ratio){if(!load||!(ratio>0))return;var x={};G0.forEach(function(g){var f=((y1[g]||0)+.5*(y2[g]||0))*((load[g]||0)/2);if(f>0)x[g]=f;});samp.push({d:d,x:x,r:Math.max(.5,Math.min(1.5,ratio))});}
+    function add(load,ratio){if(!load||!(ratio>0))return;var x={};G0.forEach(function(g){var f=(FR[g]||0)*((load[g]||0)/2);if(f>0)x[g]=f;});samp.push({d:d,x:x,r:Math.max(.5,Math.min(1.5,ratio))});}
     for(var id in (e.ex||{})){var r=e.ex[id];if(!r||!r.name)continue;var cur=(r.sets||[]).filter(filled).map(Number);if(!cur.length)continue;
       var prev=lastHome(r.name,d);if(!prev||addDays(prev.d,21)<d)continue;var pv=prev.sets.filter(filled).map(Number);if(!pv.length)continue;
       add(t&&t.load,avg(cur)/Math.max(1,avg(pv)));}
@@ -1529,11 +1529,14 @@ function learnedCard(){
   return '<section class="card"><div class="card-head"><h2>What it has learned</h2></div><dl class="pf">'+rows.map(function(r){return '<dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd>';}).join("")+'</dl></section>';
 }
 
+/* Fatigue carried into day d: each earlier day's load, weighted by how long ago it was.
+   FAT_K[0] is yesterday's weight, FAT_K[1] the day before, and so on. tests/replay.js compares
+   kernels against real logs; change the default only when a longer one predicts better. */
+var FAT_K=[1,.5];
+function fatigueRaw(d){var F={};for(var i=0;i<FAT_K.length;i++){if(!FAT_K[i])continue;var L=dayLoad(getEntry(addDays(d,-(i+1)))).L;for(var g in L)F[g]=(F[g]||0)+FAT_K[i]*L[g];}return F;}
 function suggest(d){
   if(SC[d])return SC[d];
-  var e1=getEntry(addDays(d,-1)),y=dayLoad(e1),y2=dayLoad(getEntry(addDays(d,-2))),F={},g;
-  for(g in y.L)F[g]=(F[g]||0)+y.L[g];
-  for(g in y2.L)F[g]=(F[g]||0)+.5*y2.L[g];
+  var e1=getEntry(addDays(d,-1)),y=dayLoad(e1),F=fatigueRaw(d),g;
   var LN=learn();for(g in F)if(LN.rec[g])F[g]*=LN.rec[g].m;
   var hardStreak=0,actStreak=0,i;
   for(i=1;i<=14;i++){if(dayLoad(getEntry(addDays(d,-i))).hard)hardStreak++;else break;}
@@ -1577,7 +1580,8 @@ function suggest(d){
   }
   /* one home pick whatever "where" says: home workouts plus home versions of the gym rotation, so "Not sure" and "Home only" agree */
   var homePool=S.program.tpl.filter(function(t){return !t.opt;}).concat(hasGym()?homeVersions():[]),best=null;
-  homePool.forEach(function(t){var r=score(t,1);if(!best||r.score<best.score)best=r;});
+  var ranked=homePool.map(function(t){return score(t,1);}).sort(function(a,b){return a.score-b.score;});
+  ranked.forEach(function(r){if(!best||r.score<best.score)best=r;});
   if(!best)best={t:{id:"mob",title:"Mobility + Recovery",kind:"recovery",load:{},ex:[],st:[]},ds:null,score:0};
   var reason;
   if(tired&&best.t.kind!=="strength")reason=weekFull?(flow?wdone+" workouts in the last 7 days, which meets your target. Mobility keeps you fresh.":"You've done your "+freq+" workouts this week. Mobility keeps you fresh for the rest."):hardStreak>=3?hardStreak+" hard days in a row. Go easy today.":actStreak+" active days in a row. Go easy today.";
@@ -1591,7 +1595,7 @@ function suggest(d){
   }
   var sports=profSports().map(function(s){return sportAdvice(s,d,e1,y);});
   var rest=behind?(flow?"Only "+wdone+" workout"+(wdone===1?"":"s")+" in the last 7 days, under your usual "+freq+". Good day to get one in.":daysLeft===1?"Last day of the week with "+left+" workout"+(left>1?"s":"")+" to go, so today counts.":left+" workouts left this week and "+daysLeft+" days to go, so today counts."):actStreak>=6?actStreak+" active days in a row. Consider a rest or mobility day.":null;
-  SC[d]={t:best.t,reason:reason,gym:gym,sports:sports,rest:rest,showHome:hasHome()&&W.v!=="gym",where:W};
+  SC[d]={t:best.t,reason:reason,gym:gym,sports:sports,rest:rest,rank:ranked.map(function(r){return {id:r.t.id,from:r.t.from||null,score:r.score};}),showHome:hasHome()&&W.v!=="gym",where:W};
   return SC[d];
 }
 /* sport-specific workouts get priority until they've been done often enough this week */
@@ -2925,7 +2929,11 @@ root.addEventListener("input",function(ev){
 });
 
 /* test hook for offline checks; harmless in the page */
-window.__cali={swStart:function(d,i,m){swStart(d,i,m);},swStop:function(d){swStop(d);},sw:function(){return SW;},guideFor:function(n){return guideFor(n);},S:S,render:render,gymFeedback:function(x,g){return gymFeedback(x,g);},gymEx:function(i){return gymEx(i);},normalize:function(p){return normalizeProgram(p);},feedback:function(x,r){return feedback(x,r);},suggest:function(d){SC={};HC=null;return suggest(d);}};
+window.__cali={swStart:function(d,i,m){swStart(d,i,m);},swStop:function(d){swStop(d);},sw:function(){return SW;},guideFor:function(n){return guideFor(n);},S:S,render:render,gymFeedback:function(x,g){return gymFeedback(x,g);},gymEx:function(i){return gymEx(i);},normalize:function(p){return normalizeProgram(p);},feedback:function(x,r){return feedback(x,r);},suggest:function(d){SC={};HC=null;return suggest(d);},
+  /* for tests/replay.js */
+  engine:{reset:function(){HC=null;SC={};HB=null;HV=null;CT=null;LC=null;},setKernel:function(k){FAT_K=k.slice();HC=null;SC={};LC=null;},kernel:function(){return FAT_K.slice();},
+    fatigue:function(d){return fatigueRaw(d);},learn:function(){return learn();},allDays:function(){return allDays();},tplOf:function(e){return tplOfEntry(e);},homeDone:function(e){return homeDone(e);},
+    lastHome:function(n,d){return lastHome(n,d);},pairId:function(id){return pairId(id);}}};
 
 render();
 initStore();

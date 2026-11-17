@@ -350,6 +350,7 @@ Ship only what beats the baseline. Keep the "What it has learned" card honest by
 - [x] Workout helper outside Claude (hand-off to the Claude app, no API key), with a change list you accept or reject
 - [x] Character sheet: training load per muscle group by week and month
 - [x] Targets that rise as you outgrow them, and stall nudges
+- [x] Replay harness for comparing fatigue models against real logs
 - [ ] IndexedDB storage and a real Postgres schema in place of month documents
 - [ ] Suggestion event logging (context, candidates, probabilities, outcome)
 - [ ] Server-side AI adjust
@@ -381,6 +382,8 @@ It's static files with no build step.
 **Moving logs from the Claude artifact:** in the artifact, Program → Your data → Back up. On the website, tap "Already have logs?" on the first screen and paste the backup or choose the file.
 
 **Tests:** `npm install && npm test`.
+
+**Replaying your logs:** `npm run replay -- backup.json` runs a backup through the suggestion engine and compares fatigue models: how well carried-in fatigue predicts your numbers when you repeat an exercise, and how often the engine's first pick is the workout you did. The fatigue window (`FAT_K` in `app.js`) should only change when a longer one clearly wins here. First run, 20 logged days and 32 repeat pairs: no kernel predicted performance better than guessing the average, so the window stays at yesterday plus half of the day before.
 
 ## License
 
