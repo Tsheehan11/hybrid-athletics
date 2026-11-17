@@ -204,6 +204,8 @@ Everything is **recomputed from the logs** each time (`learn()`, cached until da
 | **Home or gym** | The share of recent sessions at the gym | A threshold (25% or less means default to home) | None |
 | **Exercise version** | The last version logged on each exercise ladder | The most recent one wins | The template's default |
 | **Effort** | The easy / normal / hard rating on each session | Scales that day's load (0.6, 1, 1.3) | Normal |
+| **Targets** | Sets logged against the range, per exercise version | Top of the range on every set in 2 sessions running (3 when a harder version exists) raises the range one step (about 15%); an average below the bottom twice running lowers it. Replayed from the logs each time | The template's range |
+| **Stalls** | The last three sessions of an exercise | Identical numbers three times, short of the top, shows a nudge to add one rep | None |
 
 Learned values feed back into the app:
 
@@ -347,6 +349,7 @@ Ship only what beats the baseline. Keep the "What it has learned" card honest by
 - [x] Accounts and sync (document level)
 - [x] Workout helper outside Claude (hand-off to the Claude app, no API key), with a change list you accept or reject
 - [x] Character sheet: training load per muscle group by week and month
+- [x] Targets that rise as you outgrow them, and stall nudges
 - [ ] IndexedDB storage and a real Postgres schema in place of month documents
 - [ ] Suggestion event logging (context, candidates, probabilities, outcome)
 - [ ] Server-side AI adjust
