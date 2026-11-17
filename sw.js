@@ -1,6 +1,6 @@
 /* Offline support. App files: try the network first so updates arrive, fall back to the
    last copy when offline. Requests to other sites (account sync) are never touched. */
-var CACHE = "ha-v2";
+var CACHE = "ha-v3";
 var SHELL = ["./", "index.html", "styles.css", "app.js", "sync.js", "config.js", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png",
   "fonts/alegreya-latin-400-normal.woff2", "fonts/alegreya-latin-400-italic.woff2", "fonts/alegreya-latin-700-normal.woff2",
   "fonts/alegreya-sc-latin-500-normal.woff2", "fonts/alegreya-sc-latin-700-normal.woff2",
