@@ -72,8 +72,8 @@ From that it builds:
 
 | | |
 | --- | --- |
-| Delivery | Vanilla JS with no build step and no dependencies: `app.js` (the whole app in one IIFE, about 280 KB), `styles.css`, and a small `index.html` that loads them. The Claude artifact is the same code inlined into one file |
-| Main host | A Claude artifact (claude.ai). The same file also runs as a plain static page (GitHub Pages or opened locally) |
+| Delivery | A static website with no build step and no dependencies: `index.html`, `app.js` (the app, about 300 KB), `sync.js` (accounts and sync), `config.js` (sync settings), `styles.css`, plus `sw.js` and `manifest.webmanifest` so it installs to a phone's home screen and opens offline |
+| Host | Any static host; this repo is set up for GitHub Pages. The same `app.js` still runs inside a Claude artifact, where it uses the artifact's storage and the viewer's Claude account instead |
 | Rendering | HTML is built as strings and `render()` redraws the view. Event delegation goes through `data-act` / `data-ch` / `data-in` attributes |
 | State | `S.program` (profile, templates, week plan, settings) and `S.months` (logs). Derived caches (`HC` history, `SC` suggestions, `LC` learning, `HB` habits) are cleared whenever anything changes |
 
@@ -86,16 +86,23 @@ From that it builds:
 | Daily engine | `dayLoad`, `suggest(d)`, `sportPriority`, `sportAdvice`, `whereFor`, `sportGap`, `sportLikely` |
 | Learning | `learn()`, `habits()` / `trust` / `sportProb` / `workoutProb`, `lastVersion` |
 | Timing | `restSec`, `exSec`, `tplEstMin`, `capByTime`, `fitPlan` |
-| Storage | `initStore`, `persist`, `localLoad`, `dataCard` / `bkApply` (backup and restore), `libUpdate` (library upgrades, `LIB_V = 4`) |
-| AI adjust | `initAI`, `aiRun`, `aiApply` / `aiUndo` / `aiKeep` |
+| Storage | `initStore`, `persist`, `localLoad`, `dataCard` / `bkApply` (backup and restore), `libUpdate` (library upgrades) |
+| Sync | `syncPull`, `syncMerge`, `syncPush`, `accountCard` in `app.js`; the Supabase calls are in `sync.js` |
+| Editing a day | `dayCopy`, `dayAdd`, `dayRemove`, `dayApply` (the day gets its own copy of the workout; exercises that stay keep their ids, so logged sets stay attached) |
+| Character sheet | `sheetCards`, `loadOver`, `radar`, `feats` |
+| Workout helper | `initAI`, `aiPrompt`, `aiRun`, `aiApply` (change list or options), `applyFull`, `aiUndo` / `aiKeep` |
 
 ### Storage
 
-| Where you open it | Where logs are saved |
+Logs are always saved on the device first (`localStorage`, key `cali-climb-log-v1`), so logging never waits on the network.
+
+| Setup | Where logs also go |
 | --- | --- |
-| The Claude artifact link, as the owner or anyone it's shared with who can edit | The artifact's per-user database (`db` capability). Private to that Claude account and synced across their devices |
-| The artifact link, view-only | Browser `localStorage` on that device, with a notice that it's local only |
-| This repo's `index.html` (locally or on GitHub Pages) | That browser's `localStorage` (key `cali-climb-log-v1`) |
+| `config.js` left empty | Nowhere. Use a backup file to move them between devices |
+| `config.js` filled in and signed in | A Supabase table, `docs`, one row per document per account, protected by row-level security (`supabase/schema.sql`) |
+| Opened as a Claude artifact | The artifact's per-user database |
+
+Sync is per document. Each document carries the time it last changed. On open, on sign-in and when the app comes back to the foreground, the device takes any document the account has that is newer, then uploads its own unsent changes. If the same month changed on two devices, this device keeps its days and adds the days it doesn't have.
 
 There are two kinds of document:
 
@@ -115,11 +122,7 @@ A day `entry` holds:
 
 Backups are plain JSON shaped `{ app: "hybrid-athletics", v: 1, program, months }`. Restore can either merge or replace.
 
-Runtime capabilities used in the artifact:
-
-- `db`: per-user documents
-- `user`: viewer id and write permission
-- `sample`: the AI adjust box
+The workout helper calls the Anthropic API straight from the browser with a key the person pastes in under Program. The key is kept in that browser only (`ha-ai-v1`) and is never synced.
 
 ---
 
@@ -252,9 +255,10 @@ Sport add-ons (`ADDONS`) attach at most 2 of these extras to a general workout, 
 - **Recovery is linear, with a 2-day window.** It ignores longer fatigue (accumulated weeks) and how groups interact.
 - **Preferences ignore context.** The app can't learn "swaps push for legs only on Mondays" or "skips gym when tired".
 - **Suggestion logging is too thin to evaluate.** It doesn't record the scores or alternatives at the time of a suggestion, so there's no way to measure later whether a change made suggestions better.
-- **Data stays inside each Claude account.** The artifact's database can't be queried across users, so nothing can be learned across people.
-- **The AI adjust box needs a Claude account.** View-only and GitHub Pages visitors don't get it.
-- **One 280 KB script** is hard to test and extend: the library, engine, learning and UI are all mixed together in `app.js`.
+- **Sync stores documents, not rows.** Month blobs can't be queried across users, so nothing can be learned across people yet.
+- **Sync has only been tested against a mock.** `tests/smoke.js` fakes the Supabase endpoints; it has not been run against a live project.
+- **The workout helper needs your own API key**, and a key in a browser can be read by anyone with access to that device.
+- **One 300 KB script** is hard to test and extend: the library, engine, learning and UI are all mixed together in `app.js`.
 
 ---
 
@@ -339,8 +343,11 @@ Ship only what beats the baseline. Keep the "What it has learned" card honest by
 
 - [x] Move the script and styles out of `index.html` into `app.js` and `styles.css`
 - [ ] Split `app.js` into library / engine / learning / ui modules with tests (no behaviour change)
-- [ ] PWA with IndexedDB storage and backup import
-- [ ] Accounts, Postgres schema and sync
+- [x] Standalone website: installable, works offline, backup file import
+- [x] Accounts and sync (document level)
+- [x] Workout helper outside Claude (your own API key), with a change list you accept or reject
+- [x] Character sheet: training load per muscle group by week and month
+- [ ] IndexedDB storage and a real Postgres schema in place of month documents
 - [ ] Suggestion event logging (context, candidates, probabilities, outcome)
 - [ ] Server-side AI adjust
 - [ ] Consent flow and privacy page
@@ -355,7 +362,24 @@ Ship only what beats the baseline. Keep the "What it has learned" card honest by
 
 ## Running it
 
-It's static files with no build step. Open `index.html` in a browser, or turn on GitHub Pages for this repo (Settings → Pages → deploy from `main`, root). Outside the Claude artifact, data stays in that browser's `localStorage`. Use **Back up** under **Your data** on the program page to move it between devices.
+It's static files with no build step.
+
+**Locally:** `npm start` (or any static server) and open `http://localhost:8080`.
+
+**On the web:** turn on GitHub Pages for this repo (Settings → Pages → Deploy from a branch → `main`, `/ (root)`). The site appears at `https://<user>.github.io/hybrid-athletics/`. On a phone, use Share → Add to Home Screen to install it.
+
+**Accounts and sync (optional):**
+
+1. Create a project at supabase.com.
+2. In its SQL editor, run `supabase/schema.sql`.
+3. Paste the project URL and the public `anon` key into `config.js` and push.
+4. For sign-up without an email step, turn off "Confirm email" under Authentication → Sign In / Providers → Email.
+
+**Moving logs from the Claude artifact:** in the artifact, Program → Your data → Back up. On the website, tap "Already have logs?" on the first screen and paste the backup or choose the file.
+
+**Workout helper (optional):** Program → Workout helper, paste an Anthropic API key.
+
+**Tests:** `npm install && npm test`.
 
 ## License
 
